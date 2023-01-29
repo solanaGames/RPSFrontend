@@ -1,0 +1,180 @@
+@font-face {
+  font-family: "Arcade";
+  src: url("/public/ARCADE.TTF");
+  }  
+
+html {
+  font-family: 'Arcade', monospace;
+  background-color: #bb81be;
+}
+
+.hand {
+  -webkit-animation: wiggle 0.5s linear infinite;
+  -moz-animation: wiggle 0.5s linear infinite;
+  -ms-animation: wiggle 0.5s linear infinite;
+  animation: wiggle 0.5s linear infinite;
+}
+
+.yourHand {
+  cursor: pointer;
+}
+
+.yourHand:active:hover, .yourHand:hover {
+  -webkit-animation: wiggle 0.5s linear infinite;
+  -moz-animation: wiggle 0.5s linear infinite;
+  -ms-animation: wiggle 0.5s linear infinite;
+  animation: wiggle 0.5s linear infinite;
+}
+
+.title {
+  overflow: hidden;  
+  max-height: 500px;
+  transition: max-height 0.5s;
+  font-family: 'Arcade', monospace;
+}
+
+
+.balance {
+  -webkit-animation: pulse 1s linear infinite;
+  -moz-animation: pulse 1s linear infinite;
+  -ms-animation: pulse 1s linear infinite;
+  animation: pulse 1s linear infinite;
+}
+
+.titleHidden {
+  overflow: hidden;  
+  max-height: 0px;
+  margin-top: -100px;
+  transition: all 0.5s;
+}
+
+.bg {
+  position: absolute;
+  top:0;
+  bottom: 0;
+  left:0;
+  right:0;
+  opacity: 0.3;
+  background-image: url(/public/tile2.png), url(/public/tile1.png), url(/public/tile5.png);
+  -webkit-animation: snow 1000s linear infinite;
+  -moz-animation: snow 1000s linear infinite;
+  -ms-animation: snow 1000s linear infinite;
+  animation: snow 1000s linear infinite;
+  -webkit-transform: translate3d(0,0,0);
+  -moz-transform: translate3d(0,0,0);
+  -ms-transform: translate3d(0,0,0);
+  -o-transform: translate3d(0,0,0);
+  transform: translate3d(0,0,0);
+}
+
+@keyframes snow {
+  0% {
+    background-position: 0px 0px, 0px 0px, 0px 0px;
+  }
+  
+  100% {
+    background-position: 50000px 50000px, 10000px 20000px, -10000px 15000px;
+  }
+}
+
+@keyframes pulse {
+  0% { 
+    transform: scale(1);
+  }
+  50% { 
+    transform: scale(0.9);
+  }
+
+}
+
+@keyframes wiggle {
+  0% { 
+    transform: scale(1);
+    transform: rotate(0deg); 
+  }
+  30% { 
+    transform: scale(1);
+    transform: rotate(0deg); 
+  }
+  50% { 
+    transform: scale(0.5);
+    transform: rotate(10deg) scale(0.8); 
+  }
+  70% { 
+    transform: scale(0.5);
+    transform: rotate(-10deg) scale(0.8); 
+  }
+  100% { 
+    transform: scale(1);
+    transform: rotate(0deg); 
+  }
+}
+
+@keyframes shake {
+  0% { 
+    transform: scale(1);
+    transform: rotate(0deg); 
+  }
+  30% { 
+    transform: scale(1);
+    transform: rotate(0deg); 
+  }
+  50% { 
+    transform: rotate(25deg) scale(0.9); 
+  }
+  70% { 
+    transform: rotate(-25deg) scale(0.9); 
+  }
+  100% { 
+    transform: scale(1);
+    transform: rotate(0deg); 
+  }
+}
+
+.hand1 {
+  -webkit-animation: shake 0.5s  linear 0.1s infinite;
+  -moz-animation: shake 0.5s  linear 0.1s infinite;
+  -ms-animation: shake 0.5s  linear 0.1s infinite;
+  animation: shake 0.5s  linear 0.1s infinite;
+}
+
+.hand2 {
+  -webkit-animation: shake 0.5s linear infinite;
+  -moz-animation: shake 0.5s linear infinite;
+  -ms-animation: shake 0.5s linear infinite;
+  animation: shake 0.5s linear infinite;
+}
+
+.greenBlink{
+  display: inline-block;
+  animation: greenBlink 2s infinite;
+}
+
+@keyframes greenBlink{
+  0%		{
+    color: inherit;
+  }
+  25%		{
+    color: green;
+  }
+  75%		{
+    color: inherit;
+  }
+}
+
+.redBlink{
+  display: inline-block;
+  animation: redBlink 2s infinite;
+}
+
+@keyframes redBlink{
+  0%		{
+    color: inherit;
+  }
+  25%		{
+    color: red;
+  }
+  75%		{
+    color: inherit;
+  }
+}
