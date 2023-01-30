@@ -86,8 +86,8 @@ function Game() {
       <Box className='bg' height="100vh"/>
       <Flex direction="column" align="center">
       <Flex direction="column" align="center" justify="space-evenly" position="relative" gap={12} maxWidth={800} textAlign="center">
-        <Box className={(publicKey) ? "titleHidden" : "title"} paddingTop={20}>
-          <Text fontSize={80}>
+        <Box className={(publicKey) ? "titleHidden" : "title"} height={isLargerThan800 ? 400 : undefined} paddingTop={20}>
+          <Text fontSize={80} marginBottom={-12}>
             SOLRPS
           </Text>
           <Flex direction="column" align="center" paddingTop={12}>
@@ -99,9 +99,9 @@ function Game() {
             </Flex>
         </Box>
         </Flex>
-        <Flex direction="column" align="center" justify="space-evenly" position="relative" maxWidth={800} textAlign="center" height="100vh">
+        <Flex direction="column" align="center" justify="space-evenly" position="relative" maxWidth={800} textAlign="center" height="95vh">
         <Flex direction="column" align="center" gap={2}>
-        <Box><ConnectButton/></Box>
+        <Box paddingTop={8}><ConnectButton/></Box>
         <Box height="92px"><Tooltip label={solBalance}>{solBalance ? <Text fontSize={36} fontFamily="inherit">Balance
       <Flex align="center" className="balance" marginTop={-4} >{numDisplay}<Box paddingRight={2}/>SOL</Flex> </Text> : ' '}</Tooltip></Box>
         </Flex>
@@ -123,7 +123,7 @@ function Game() {
           </Text>
         </Box>
           </Flex>}
-        <Box height="60px">{message?.split('|').map(m => <Text fontSize={24} marginBottom={-4}>{m}<br/></Text>)}</Box>
+        <Box height="60px">{(message === ' ' && publicKey) ? <Text fontSize={24} marginBottom={-4}>Select a bet and hand!</Text> : message?.split('|').map(m => <Text fontSize={24} marginBottom={-4}>{m}<br/></Text>)}</Box>
         <Flex width="100%" 
         direction="column" align="center" gap={4}>
           
