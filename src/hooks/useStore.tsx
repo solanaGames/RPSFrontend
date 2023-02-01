@@ -81,15 +81,12 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
 
     const nominalBetSize = betSize * LAMPORTS_PER_SOL;
 
-
     async function loadSolBalance() {
+      console.log('loadddingisngins')
       if (publicKey) {
           const balance = await connection.getBalance(publicKey)
           setSolBalance(balance / LAMPORTS_PER_SOL);
-      } else {
-        
       }
-      loadSolBalance();
   }
 
   useEffect(() => {
@@ -284,16 +281,6 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
                 newTxn.add(transferLamportsIx)
                 newTxn.add(createUserWSOLAccountIx)
             }
-
-            if (!userWSOLAccountInfo) {
-                const closeWSOLAccountIx = createCloseAccountInstruction(
-                    tokenAccount,
-                    publicKey,
-                    publicKey
-                  );
-                newTxn.add(closeWSOLAccountIx)
-            }
-
               const ix = await anchorProgram.methods.createGame(
                 new anchor.BN(seed),
                 commitment.toJSON().data,
@@ -311,7 +298,18 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
                 associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
               }).instruction();
 
-              const signature = await sendTransaction(newTxn.add(ix), connection);
+              newTxn.add(ix)
+
+            if (!userWSOLAccountInfo) {
+              const closeWSOLAccountIx = createCloseAccountInstruction(
+                  tokenAccount,
+                  publicKey,
+                  publicKey
+                );
+              newTxn.add(closeWSOLAccountIx)
+          }
+
+              const signature = await sendTransaction(newTxn, connection);
 
               setCurrentGameState({
                 game,
