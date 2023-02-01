@@ -56,6 +56,7 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
     const [gameState, setGameState] = useLocalStorage<GameState>('gameState', {});
     const [solBalance, setSolBalance] = useState<number | null>(0);
     const [betSize, setBetSize] = useState<number>(0.01);
+    const [settling, setSettling] = useState<boolean>(false);
     const { connection } = useConnection();
     const { wallet, publicKey, sendTransaction } = useWallet();
     const anchorProgram = useRef(new anchor.Program(
@@ -122,7 +123,8 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
           const gameInstance = await anchorProgram.account.game.fetch(currentGameKey);
 
           console.log('gameInstance', gameInstance);
-          if (gameInstance.state.acceptingReveal && currentGameState.status !== 'acceptingReveal') { 
+          if (gameInstance.state.acceptingReveal && currentGameState.status !== 'acceptingReveal' && !settling) { 
+                setSettling(true);
                 const tx = await anchorProgram.methods.revealGame(
                     { rock: {} }, new anchor.BN(Object.values(currentGameState.salt))
                 ).accounts({
@@ -136,6 +138,22 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
                 (gameInstance.state.acceptingReveal as any).player2.revealed.pubkey,
               )
 
+              const userWSOLAccountInfo = Boolean(await connection.getAccountInfo(
+                currentGameState.p1Ata,
+            ));
+
+            if (!userWSOLAccountInfo) {
+              const createUserWSOLAccountIx = createAssociatedTokenAccountInstruction(
+                  publicKey,
+                  currentGameState.p1Ata,
+                  publicKey,
+                  MINT,
+              );
+              
+              tx.add(createUserWSOLAccountIx)
+          }
+
+
                 const settleIx = await anchorProgram.methods.settleGame().accounts({
                   game: currentGameKey,
                   player1TokenAccount: currentGameState.p1Ata,
@@ -146,12 +164,24 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
                   tokenProgram: TOKEN_PROGRAM_ID,
                 }).instruction();
 
+                tx.add(settleIx)
+
+
+
+            const closeWSOLAccountIx = createCloseAccountInstruction(
+              currentGameState.p1Ata,
+              publicKey,
+              publicKey,
+            );
+
+            tx.add(closeWSOLAccountIx);
+
+
+                const sig = await sendTransaction(tx, connection)
                 setCurrentGameState({
                   ...currentGameState,
                   status: 'acceptingReveal'
                 })
-
-                const sig = await sendTransaction(tx.add(settleIx), connection)
                 loadSolBalance();
                 return sig;
             }
@@ -299,15 +329,6 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
               }).instruction();
 
               newTxn.add(ix)
-
-            if (!userWSOLAccountInfo) {
-              const closeWSOLAccountIx = createCloseAccountInstruction(
-                  tokenAccount,
-                  publicKey,
-                  publicKey
-                );
-              newTxn.add(closeWSOLAccountIx)
-          }
 
               const signature = await sendTransaction(newTxn, connection);
 

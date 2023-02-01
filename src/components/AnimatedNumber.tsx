@@ -13,7 +13,7 @@ function AnimatedNumber({number}: {number: number}) {
         if (number > currentNumber) {
             setBlinkColor('greenBlink');
         }
-        if (number < currentNumber) {
+        if (number < currentNumber - 0.01) {
             setBlinkColor('redBlink');
         }
         setCurrentNumber(number)
