@@ -1,7 +1,7 @@
 @font-face {
   font-family: "Arcade";
   src: url("/public/ARCADE.TTF");
-  }  
+}  
 
 html {
   font-family: 'Arcade', monospace;
@@ -45,6 +45,22 @@ html {
   overflow: hidden;  
   max-height: 0px;
   margin-top: -100px;
+  transition: all 0.5s;
+}
+
+
+.balanceBox {
+  overflow: hidden;  
+  max-height: 500px;
+  height: 92px;
+  transition: max-height 0.5s;
+  font-family: 'Arcade', monospace;
+}
+
+
+.balanceBoxHidden {
+  overflow: hidden;  
+  max-height: 0px;
   transition: all 0.5s;
 }
 

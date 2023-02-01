@@ -1,6 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import logo from './logo.svg';
-import './App.css';
 import { Box } from '@chakra-ui/react'
 import { MechanicalCounter } from "mechanical-counter";
 
@@ -24,7 +22,7 @@ function AnimatedNumber({number}: {number: number}) {
         }, 1000)
     }, [number])
 
-  return (<Box className={blinkColor ? blinkColor : undefined}><MechanicalCounter text={number.toFixed(4)} /></Box>
+  return (<Box fontSize={36} fontFamily="inherit" className={blinkColor ? blinkColor : undefined}><MechanicalCounter text={number.toFixed(4)} /></Box>
   );
 }
 

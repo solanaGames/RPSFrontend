@@ -15,7 +15,7 @@ export default function ConnectButton() {
     useEffect(() => {
       connect();
     }, [wallet])
-
+  console.log('walletbutton', publicKey);
     return  publicKey ? 
     <Menu gutter={0}>
   <MenuButton as={Button} borderRight="1px solid">
@@ -32,25 +32,13 @@ export default function ConnectButton() {
       navigator.clipboard.writeText(publicKey.toBase58());
     }}
     >Copy address</MenuItem>
-    <MenuItem
-      key='challenge'
-      onClick={() => {
-        navigator.clipboard.writeText(publicKey.toBase58());
-      }}
-      >Challenge a friend</MenuItem>
-      <MenuItem
-        key='join'
-        onClick={() => {
-          navigator.clipboard.writeText(publicKey.toBase58());
-        }}
-        >Join a game</MenuItem>
   </MenuList>
 </Menu>  : <Menu gutter={0}>
   <MenuButton as={Button} borderRight="1px solid">
     Connect wallet <ChevronDownIcon />
   </MenuButton>
   <MenuList>
-    {wallets.map(wallet => <MenuItem onClick={() => {
+    {wallets.map(wallet => <MenuItem key={wallet.adapter.name} onClick={() => {
         select(wallet.adapter.name)
     }}>
         {wallet.adapter.name}
