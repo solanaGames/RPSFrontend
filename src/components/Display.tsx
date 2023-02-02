@@ -61,7 +61,7 @@ function Display() {
           break;
         case 'error': 
             result = '❌';
-            message = <MultiLineText message={'Transaction did not go through. Please refresh and try again.'}/>
+            message = <MultiLineText message={'Transaction did not go through.\nPlease refresh and try again.'}/>
             break;
         case 'signSettle': 
             result = '✍️';
