@@ -16,7 +16,7 @@ import {Rps, IDL} from '../rps';
 import { keccak_256 } from "js-sha3";
 import { TOKEN_PROGRAM_ID } from '@coral-xyz/anchor/dist/cjs/utils/token';
 import { ASSOCIATED_TOKEN_PROGRAM_ID, getMinimumBalanceForRentExemptAccount, createAssociatedTokenAccountInstruction, getAssociatedTokenAddress, syncNative, createSyncNativeInstruction, createCloseAccountInstruction } from '@solana/spl-token';
-import { useInterval } from '@chakra-ui/react';
+import { useInterval, useTimeout } from '@chakra-ui/react';
 
 window.Buffer = window.Buffer || require("buffer").Buffer;
 
@@ -126,6 +126,7 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
   export function StoreProvider({
     children,
   }: StoreProviderPropsType): ReactElement {
+    const [ping, setPing] = useState(0);
     const [tempStatus, setTempStatus] = useState<string | null>(null);
     const [gameState, setGameState] = useLocalStorage<AllGameState>('gameState', {});
     const [solBalance, setSolBalance] = useState<number | null>(0);
@@ -144,7 +145,7 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
             ),
         )).current
 
-    const currentGameState = publicKey ? gameState[publicKey.toBase58()] : null;
+    const currentGameState = publicKey ? gameState[publicKey.toBase58()] : {status: 'empty' as 'empty'};
     const setCurrentGameState = useCallback((newGameState: ParsedGameState) => {
       if (publicKey) {
         setGameState({
@@ -167,7 +168,7 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
 
     const nominalBetSize = betSize * LAMPORTS_PER_SOL;
 
-    const parsedGameState: ParsedGameState = currentGameState ? {
+    const parsedGameState: ParsedGameState = {
       status: currentGameState.status,
       game: currentGameState.status !== 'empty' ? new PublicKey(currentGameState.game) : undefined,
       salt: currentGameState.status !== 'empty' ? new Uint8Array(currentGameState.salt.split(',').map(Number)) : undefined,
@@ -178,7 +179,7 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
       escrowTokenAccount: (currentGameState.status === 'created' || currentGameState.status === 'settled') ? new PublicKey(currentGameState.escrowTokenAccount) : undefined,
       opponentHand: currentGameState.status === 'settled' ? currentGameState.opponentHand : undefined,
       result: currentGameState.status === 'settled' ? currentGameState.result : undefined,
-    } : {status: 'empty'};
+    };
 
     async function loadSolBalance() {
       if (publicKey) {
@@ -198,7 +199,8 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
     async function updateState() {
         if (parsedGameState) {
 
-          if (parsedGameState.status === 'initialized' || parsedGameState.status === 'empty') return;
+          if (!(parsedGameState.status === 'initialized' || parsedGameState.status === 'empty')) {
+
 
           const currentGameKey = parsedGameState.game
           const gameInstance = await anchorProgram.account.game.fetch(currentGameKey);
@@ -225,7 +227,6 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
             }
           }
 
-          console.log(parsedGameState);
           if (gameInstance.state.acceptingReveal && parsedGameState.status === 'created' && !settling) {
                 setSettling(true);
                 const option = [{rock: {}}, {paper: {}}, {scissors: {}}][parsedGameState.hand]
@@ -277,20 +278,24 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
             tx.add(closeWSOLAccountIx);
 
 
-                setTempStatus('signSettle');
-                const sig = await sendTransaction(tx, connection, {skipPreflight: true})
-                  setTempStatus(null);
-                loadSolBalance();
-                setSettling(false);
-                return sig;
+              setTempStatus('signSettle');
+              const sig = await sendTransaction(tx, connection, {skipPreflight: true})
+                setTempStatus(null);
+              loadSolBalance();
+              setSettling(false);
             }
         }
+      }
+        setPing(ping + 1);
     }
 
-    useInterval(() => {
-      updateState();
-    }, 1000);
-
+    useEffect(
+      () => {
+        if (parsedGameState.status === 'created') {
+          setTimeout(() => updateState(), 1000);
+        }
+      }, [ping, parsedGameState.status]
+    );
 
     const initializeGame = useCallback((pvp?: boolean) => {
         if (publicKey) {

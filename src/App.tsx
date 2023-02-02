@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import logo from './logo.svg';
-import './App.css';
+import './App.scss';
 import { Box, Button, ChakraProvider, extendTheme, Flex, Text } from '@chakra-ui/react'
 import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';

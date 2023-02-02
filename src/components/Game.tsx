@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import logo from './logo.svg';
-import '../App.css';
 import { Box, Button, Card, ChakraProvider, Flex, List, ListItem, Spacer, Text, Tooltip, useMediaQuery } from '@chakra-ui/react'
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { LAMPORTS_PER_SOL } from '@solana/web3.js';
@@ -13,10 +12,10 @@ import Loading from './Loading';
 import Hand, { HANDS } from './Hand';
 import Display from './Display';
 
-function Game() {
-    const [result, setResult] = useState<string | null>(null);
+function Game() { 
     const [message, setMessage] = useState<string | null>(' ');
     const [aboutOpen, setAboutOpen] = useState<boolean>(false);
+    const [isLargerThan800] = useMediaQuery('(min-width: 800px)');
     const { publicKey} = useWallet();
     const { parsedGameState, betSize, setBetSize, solBalance, setSolBalance } = useStore();
 
@@ -30,7 +29,7 @@ function Game() {
 
     const disabled = (chosenHand !== undefined && chosenHand !== null);
 
-    const betSizes = [0.01,0.05,0.1,0.5,1,5,10, 100];
+    const betIncrements = [0.01,0.1,1];
 
   return (
     <Box overflow="hidden" height="100vh" bg="#bb81be">
@@ -51,16 +50,20 @@ function Game() {
           
         <Flex width="100%" 
         direction="column" align="center" marginBottom={publicKey ? undefined : -24}>
-        <Text fontSize={24}>{betSize ? "B" : "Select b"}et size</Text>
-        <Flex gap={2} paddingBottom={2} flexWrap="wrap" width="100%" justify="center">
-            {betSizes.map(size => <Box flexBasis="20%" key={size}>
-                <Button width="64px" onClick={() => setBetSize(size)} bg={betSize === size ? "var(--chakra-colors-gray-400) !important" : undefined} size="sm"> {size} SOL</Button>
-            </Box>)}
+        <Text fontSize={24}>Wager: {betSize.toFixed(2)} SOL</Text>
+        <Flex gap={8} paddingBottom={2} flexWrap="wrap" width="100%" justify={isLargerThan800 ? "center" : "space-between"}>
+            {betIncrements.map(size => <Box flexBasis="15%" key={size}>
+                <Button className="eightbit-btn" width={isLargerThan800 ? "64px" : "48px"} onClick={() => setBetSize(betSize + size)} size="sm"> +{size}</Button>
+            </Box>).concat(
+              <Box flexBasis="15%" key="reset">
+              <Button className="eightbit-btn eightbit-btn--reset" width={isLargerThan800 ? "64px" : "48px"} onClick={() => setBetSize(0.01)}  size="sm"> RESET </Button>
+              </Box>
+            )}
         </Flex>
         </Flex>
         <Flex width="100%" 
         direction="column" align="center">
-        <Text fontSize={24}>{disabled ? "Your hand" : "Choose your hand"}</Text>
+        <Text marginBottom={-4} fontSize={24}>{disabled ? "Your hand" : "Choose your hand"}</Text>
         {disabled ? <Flex width="100%" justify="center">
             <Text fontSize={72} className="disabledHand" onClick={() => {}}>{HANDS[chosenHand].emoji}</Text>
         </Flex> : <Flex width="100%" justify="space-between">

@@ -1,9 +1,8 @@
 
 
-        import { Box, Text, useMediaQuery } from '@chakra-ui/react'
+import { Box, Text, useMediaQuery } from '@chakra-ui/react'
 import { useWallet } from '@solana/wallet-adapter-react';
 import { ReactNode, useEffect, useState } from 'react';
-import '../App.css';
 import useStore from '../hooks/useStore';
 import { HANDS } from './Hand';
 import Loading from './Loading';
@@ -101,7 +100,7 @@ function Display() {
   return (
     <>
       {!result ? <Loading/> : <Box className="hand" height={170} margin-bottom={-100}>
-        <Text fontSize={160}>
+        <Text fontSize={isLargerThan800 ? 160 : 120}>
           {outcome.outcome ?? result}
         </Text>
     </Box>}

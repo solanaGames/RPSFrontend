@@ -1,6 +1,5 @@
 import { Box, Flex, Text, useMediaQuery } from '@chakra-ui/react'
 import { useWallet } from '@solana/wallet-adapter-react';
-import '../App.css';
 
 function Title() {
     const { publicKey} = useWallet();

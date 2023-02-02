@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import logo from './logo.svg';
-import '../App.css';
 import { Box, Button, Card, ChakraProvider, Flex, List, ListItem, Spacer, Text, Tooltip, useMediaQuery } from '@chakra-ui/react'
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { LAMPORTS_PER_SOL } from '@solana/web3.js';
