@@ -53,7 +53,7 @@ function Game() {
         <Text fontSize={24} className={parsedGameState.status === "created" ? "balance greenBlink" : undefined}>{parsedGameState.status === "created" ? "Current wager" : 'Bet size'}: {parsedGameState.status === "created" ? parsedGameState.wager.toFixed(2) : betSize.toFixed(2)} SOL</Text>
         <Flex paddingTop={1} gap={8} paddingBottom={2} flexWrap="wrap" width="100%" justify={isLargerThan800 ? "center" : "space-between"}>
             {betIncrements.map(size => <Box flexBasis="15%" key={size}>
-                <Button className="eightbit-btn" width={isLargerThan800 ? "64px" : "52px"} onClick={() => {
+                <Button className="eightbit-btn" width={isLargerThan800 ? "64px" : "48px"} onClick={() => {
                   if (betSize === 0.01 && size > 0.01) {
                     setBetSize(size)
                     return;
@@ -62,7 +62,7 @@ function Game() {
                 }} size="sm"> +{size}</Button>
             </Box>).concat(
               <Box flexBasis="15%" key="reset">
-              <Button className="eightbit-btn eightbit-btn--reset" width={isLargerThan800 ? "64px" : "52px"} onClick={() => setBetSize(0.01)}  size="sm"> RESET </Button>
+              <Button className="eightbit-btn eightbit-btn--reset" width={isLargerThan800 ? "64px" : "48px"} onClick={() => setBetSize(0.01)}  size="sm"> RESET </Button>
               </Box>
             )}
         </Flex>
