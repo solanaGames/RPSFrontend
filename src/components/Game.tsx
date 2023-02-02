@@ -10,19 +10,15 @@ import useStore from '../hooks/useStore';
 import { useToast } from '@chakra-ui/react'
 import Title from './Title';
 import Loading from './Loading';
-import Hand from './Hand';
-import GameMessage from './GameMessage';
+import Hand, { HANDS } from './Hand';
+import Display from './Display';
 
 function Game() {
     const [result, setResult] = useState<string | null>(null);
     const [message, setMessage] = useState<string | null>(' ');
-    const [chosenHand, setChosenHand] = useState<string | null>(null);
     const [aboutOpen, setAboutOpen] = useState<boolean>(false);
     const { publicKey} = useWallet();
-    const toast = useToast();
-    const { connection } = useConnection();
-    const [isLargerThan800] = useMediaQuery('(min-width: 800px)');
-    const { createGame, betSize, setBetSize, solBalance, setSolBalance } = useStore();
+    const { parsedGameState, betSize, setBetSize, solBalance, setSolBalance } = useStore();
 
     useEffect(() => {
       if (!publicKey) {
@@ -30,45 +26,9 @@ function Game() {
       }
     }, [publicKey]);
 
-    useEffect(() => {
-      if(chosenHand){
-        setTimeout(() => {
-          const rand = Math.floor(Math.random() * 3);
-          const opponentHand = ['✊',
-          '✋',
-          '✌️'][rand];
-  
-          setResult(opponentHand)
-          const newMessage = 'Opponent threw '.concat(opponentHand);
-          setMessage(newMessage);
-  
-          setTimeout(() => {
-            if (chosenHand) {
-              if (chosenHand === opponentHand) {
-                setResult("🤝")
-                setMessage(newMessage.concat("|It's a tie!"))
-              } else {
-                if ((chosenHand.charCodeAt(0) - 1)%3 === (opponentHand.charCodeAt(0)%3)) {
-                  setResult("👏")
-                  setMessage(newMessage.concat("|You win!"))
-                  setSolBalance((solBalance ?? 0) + (betSize ?? 0));
-                } else {
-                  setResult("👎")
-                  setMessage(newMessage.concat("|Unlucky! You lost..."))
-                  setSolBalance((solBalance ?? 0) - (betSize ?? 0));
-                }
-              }
-            }
+    const chosenHand = parsedGameState.status === 'created' ? parsedGameState.hand : null;
 
-            setTimeout(() => {
-              setResult(null);
-              setChosenHand(null);
-              setMessage(' ');
-            }, 2000)
-          }, 2000)
-        }, 2000);
-      }
-    }, [chosenHand]);
+    const disabled = (chosenHand !== undefined && chosenHand !== null);
 
     const betSizes = [0.01,0.05,0.1,0.5,1,5,10, 100];
 
@@ -85,13 +45,7 @@ function Game() {
       <Flex align="center" className="balance" marginTop={-4} >
       <AnimatedNumber number={solBalance ?? 0}/><Box paddingRight={2}/><Text fontSize={36} fontFamily="inherit">SOL</Text></Flex></Box> : ' '}</Tooltip></Box>
         </Flex>
-        {result ? 
-          <Box className="hand" height={170} margin-bottom={-100}>
-          <Text fontSize={160}>
-            {result}
-          </Text>
-        </Box> : <Loading/>}
-        {<GameMessage message={message}/>}
+        {<Display/>}
         <Flex width="100%" 
         direction="column" align="center" gap={4}>
           
@@ -106,9 +60,9 @@ function Game() {
         </Flex>
         <Flex width="100%" 
         direction="column" align="center">
-        <Text fontSize={24}>{"Choose your hand"}</Text>
-        {chosenHand ? <Flex width="100%" justify="center">
-            <Text fontSize={72} className="yourHand" onClick={() => setChosenHand(null)}>{chosenHand}</Text>
+        <Text fontSize={24}>{disabled ? "Your hand" : "Choose your hand"}</Text>
+        {disabled ? <Flex width="100%" justify="center">
+            <Text fontSize={72} className="disabledHand" onClick={() => {}}>{HANDS[chosenHand].emoji}</Text>
         </Flex> : <Flex width="100%" justify="space-between">
             <Hand hand={0}/>
             <Hand hand={1}/>

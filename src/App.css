@@ -15,6 +15,14 @@ html {
   animation: wiggle 0.5s linear infinite;
 }
 
+
+.disabledHand {
+  -webkit-animation: wiggle 0.5s linear infinite;
+  -moz-animation: wiggle 0.5s linear infinite;
+  -ms-animation: wiggle 0.5s linear infinite;
+  animation: wiggle 0.5s linear infinite;
+}
+
 .yourHand {
   cursor: pointer;
 }

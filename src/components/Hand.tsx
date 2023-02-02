@@ -29,11 +29,13 @@ export const HANDS = {
     },
 }
 
-function Game({hand} : {hand: number}) {
-    const {createGame} = useStore();
+function Hand({hand} : {hand: number}) {
+    const {createGame, parsedGameState} = useStore();
     const toast = useToast();
-    return <Text fontSize={72} className="yourHand" onClick={() => {
-                createGame(0).then(
+    const disabled = parsedGameState.status === 'created';
+    return <Text  fontSize={72} className="yourHand" onClick={() => {
+        if (!disabled)
+                createGame(hand).then(
                 (hash) => toast({
                     position: 'bottom-left',
                     render: () => (
@@ -59,4 +61,4 @@ function Game({hand} : {hand: number}) {
     </Text>
 }
 
-export default Game;
+export default Hand;

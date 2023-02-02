@@ -52,7 +52,10 @@
     "extends": [
       "react-app",
       "react-app/jest"
-    ]
+    ],
+    "rules": {
+      "no-fallthrough": ["error", { "commentPattern": "break[\\s\\w]*omitted" }]
+    }
   },
   "browserslist": {
     "production": [

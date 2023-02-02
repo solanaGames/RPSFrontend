@@ -19,25 +19,98 @@ import { ASSOCIATED_TOKEN_PROGRAM_ID, getMinimumBalanceForRentExemptAccount, cre
 import { useInterval } from '@chakra-ui/react';
 
 window.Buffer = window.Buffer || require("buffer").Buffer;
-  
-  type GameState = any;
+
+type ParsedEmptyGame = {
+  status: 'empty'
+}
+type ParsedInitializedGame = {
+  status: 'initialized';
+  game: PublicKey;
+  salt: Uint8Array;
+  seed: Uint8Array;
+}
+
+type ParsedCreatedGame = {
+  status: 'created';
+  game: PublicKey;
+  salt: Uint8Array;
+  seed: Uint8Array;
+  hand: number,
+  p1Ata: PublicKey,
+  gameAuthority: PublicKey,
+  escrowTokenAccount: PublicKey,
+}
+
+type ParsedChallengeExpired = Omit<ParsedCreatedGame, "status"> & {
+  status: 'challengeExpired'
+}
+
+type ParsedSettled = Omit<ParsedCreatedGame, "status"> & {
+  status: 'settled',
+  result: 'won' | 'lost' | 'tied',
+  opponentHand: number,
+}
+
+type ParsedGameState = ParsedEmptyGame | ParsedInitializedGame | ParsedCreatedGame | ParsedChallengeExpired | ParsedSettled;
+
+type EmptyGame = {
+  status: 'empty'
+}
+
+type InitializedGame = {
+  status: 'initialized';
+  game: string;
+  salt: string;
+  seed: string;
+}
+
+type CreatedGame = {
+  status: 'created';
+  game: string;
+  salt: string;
+  seed: string;
+  hand: number,
+  p1Ata: string,
+  gameAuthority: string,
+  escrowTokenAccount: string,
+}
+
+type ChallengeExpired = Omit<CreatedGame, "status"> & {
+  status: 'challengeExpired'
+}
+
+type Settled = Omit<CreatedGame, "status"> & {
+  status: 'settled',
+  result: 'won' | 'lost' | 'tied',
+  opponentHand: number,
+}
+
+type GameState = EmptyGame | InitializedGame | CreatedGame | ChallengeExpired | Settled;
+
+type AllGameState = {
+  [key: string]: GameState
+}
 
   type StoreContextType = {
-    gameState: any,
+    tempStatus: string | null;
+    parsedGameState: ParsedGameState,
     createGame: (choice: number) => Promise<string>,
     betSize: number,
     setBetSize: (arg: number) => void,
     solBalance: number,
     setSolBalance: (arg: number) => void,
+    setCurrentGameState: any,
   };
   
   const defaultContextValues: StoreContextType = {
-    gameState: {},
+    tempStatus: null,
+    parsedGameState: {status: 'empty'},
     createGame: () => Promise.resolve(''),
     betSize: 0.01,
     setBetSize: () => {},
     solBalance: 0,
     setSolBalance: () => {},
+    setCurrentGameState: () => {},
   };
   
   export const StoreContext =
@@ -53,7 +126,8 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
   export function StoreProvider({
     children,
   }: StoreProviderPropsType): ReactElement {
-    const [gameState, setGameState] = useLocalStorage<GameState>('gameState', {});
+    const [tempStatus, setTempStatus] = useState<string | null>(null);
+    const [gameState, setGameState] = useLocalStorage<AllGameState>('gameState', {});
     const [solBalance, setSolBalance] = useState<number | null>(0);
     const [betSize, setBetSize] = useState<number>(0.01);
     const [settling, setSettling] = useState<boolean>(false);
@@ -71,19 +145,42 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
         )).current
 
     const currentGameState = publicKey ? gameState[publicKey.toBase58()] : null;
-    const setCurrentGameState = useCallback((newGameState: GameState) => {
+    const setCurrentGameState = useCallback((newGameState: ParsedGameState) => {
       if (publicKey) {
         setGameState({
           ...gameState,
-          [publicKey.toBase58()]: newGameState
+          [publicKey.toBase58()]: {
+            status: newGameState.status,
+            game: newGameState.status !== 'empty' ? newGameState.game.toBase58() : undefined,
+            salt: newGameState.status !== 'empty' ? newGameState.salt.toString() : undefined,
+            seed: newGameState.status !== 'empty' ? newGameState.seed.toString() : undefined,
+            hand: (newGameState.status === 'created' || newGameState.status ===  'settled') ? newGameState.hand : undefined,
+            p1Ata: (newGameState.status === 'created' || newGameState.status ===  'settled') ? newGameState.p1Ata.toBase58() : undefined,
+            gameAuthority: (newGameState.status === 'created' || newGameState.status ===  'settled') ? newGameState.gameAuthority.toBase58() : undefined,
+            escrowTokenAccount: (newGameState.status === 'created' || newGameState.status ===  'settled') ? newGameState.escrowTokenAccount.toBase58() : undefined,
+            opponentHand: newGameState.status === 'settled' ? newGameState.opponentHand : undefined,
+            result: newGameState.status === 'settled' ? newGameState.result : undefined,
+          }
         })
       }
     }, [currentGameState, setGameState, publicKey])
 
     const nominalBetSize = betSize * LAMPORTS_PER_SOL;
 
+    const parsedGameState: ParsedGameState = currentGameState ? {
+      status: currentGameState.status,
+      game: currentGameState.status !== 'empty' ? new PublicKey(currentGameState.game) : undefined,
+      salt: currentGameState.status !== 'empty' ? new Uint8Array(currentGameState.salt.split(',').map(Number)) : undefined,
+      seed: currentGameState.status !== 'empty' ? new Uint8Array(currentGameState.seed.split(',').map(Number)) : undefined,
+      hand: (currentGameState.status === 'created' || currentGameState.status === 'settled') ? currentGameState.hand : undefined,
+      p1Ata: (currentGameState.status === 'created' || currentGameState.status === 'settled') ? new PublicKey(currentGameState.p1Ata) : undefined,
+      gameAuthority: (currentGameState.status === 'created' || currentGameState.status === 'settled') ? new PublicKey(currentGameState.gameAuthority) : undefined,
+      escrowTokenAccount: (currentGameState.status === 'created' || currentGameState.status === 'settled') ? new PublicKey(currentGameState.escrowTokenAccount) : undefined,
+      opponentHand: currentGameState.status === 'settled' ? currentGameState.opponentHand : undefined,
+      result: currentGameState.status === 'settled' ? currentGameState.result : undefined,
+    } : {status: 'empty'};
+
     async function loadSolBalance() {
-      console.log('loadddingisngins')
       if (publicKey) {
           const balance = await connection.getBalance(publicKey)
           setSolBalance(balance / LAMPORTS_PER_SOL);
@@ -98,40 +195,48 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
     }
   }, [publicKey]);
 
-    // useEffect(() => {
-    //     if (salt && gameKey) {
-    //         console.log(salt, gameKey);
-    //     if (intervalId) {
-    //         console.log('kill', intervalId)
-    //         clearInterval(intervalId);
-    //     }
-    //         const id = setInterval(async () => {
-    //                 const gameInstance = await anchorProgram.account.game.fetch(new PublicKey(gameKey));
-    //                 console.log('ping')
-    //                 console.log(gameInstance);
-    //                 setGameState(gameInstance);
-    //         }, 10000);
-    //         console.log('id:', id);
-    //         setIntervalId(id);
-    //     }
-    // }, [salt, gameKey]);
-
     async function updateState() {
-      console.log('updateState', gameState, currentGameState , publicKey.toBase58());
-        if (currentGameState) {
-          const currentGameKey = currentGameState.game
+        if (parsedGameState) {
+
+          if (parsedGameState.status === 'initialized' || parsedGameState.status === 'empty') return;
+
+          const currentGameKey = parsedGameState.game
           const gameInstance = await anchorProgram.account.game.fetch(currentGameKey);
 
-          console.log('gameInstance', gameInstance);
-          if (gameInstance.state.acceptingReveal && currentGameState.status !== 'acceptingReveal' && !settling) { 
+          if (gameInstance.state.settled) {
+            setCurrentGameState({
+              ...parsedGameState,
+              result: ['won', 'lost', 'tied'][[gameInstance.state.settled.result.p1,gameInstance.state.settled.result.p2, (gameInstance.state.settled.result as any).tie].findIndex(Boolean)] as 'won' | 'lost' | 'tied',
+              opponentHand: [(gameInstance.state.settled as any).player2.revealed.choice.rock,(gameInstance.state.settled as any).player2.revealed.choice.paper,(gameInstance.state.settled as any).player2.revealed.choice.scissors].findIndex(Boolean),
+              status: 'settled'
+            })
+          }
+
+          if (gameInstance.state.acceptingReveal) {
+            const expiry = (gameInstance.state.acceptingReveal as any).expirySlot;
+            console.log(gameInstance);
+            const currentSlot = await connection.getSlot();
+
+            if (currentSlot > expiry.toNumber()) {
+              setCurrentGameState({
+                ...parsedGameState,
+                status: 'challengeExpired',
+              })
+            }
+          }
+
+          console.log(parsedGameState);
+          if (gameInstance.state.acceptingReveal && parsedGameState.status === 'created' && !settling) {
                 setSettling(true);
+                const option = [{rock: {}}, {paper: {}}, {scissors: {}}][parsedGameState.hand]
                 const tx = await anchorProgram.methods.revealGame(
-                    { rock: {} }, new anchor.BN(Object.values(currentGameState.salt))
+                  option, new anchor.BN(parsedGameState.salt)
                 ).accounts({
                   player: publicKey,
                   game: currentGameKey,
                 }).transaction();
 
+                const p1Ata = parsedGameState.p1Ata;
 
               const p2Ata = await getAssociatedTokenAddress(
                 MINT,
@@ -139,37 +244,32 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
               )
 
               const userWSOLAccountInfo = Boolean(await connection.getAccountInfo(
-                currentGameState.p1Ata,
+                p1Ata,
             ));
 
             if (!userWSOLAccountInfo) {
               const createUserWSOLAccountIx = createAssociatedTokenAccountInstruction(
                   publicKey,
-                  currentGameState.p1Ata,
+                  p1Ata,
                   publicKey,
                   MINT,
               );
-              
+
               tx.add(createUserWSOLAccountIx)
           }
-
-
                 const settleIx = await anchorProgram.methods.settleGame().accounts({
                   game: currentGameKey,
-                  player1TokenAccount: currentGameState.p1Ata,
-                  // typescript thinks it's player_2 not player2
+                  player1TokenAccount: p1Ata,
                   player2TokenAccount: p2Ata,
-                  gameAuthority: currentGameState.gameAuthority,
-                  escrowTokenAccount: currentGameState.escrowTokenAccount,
+                  gameAuthority: parsedGameState.gameAuthority,
+                  escrowTokenAccount: parsedGameState.escrowTokenAccount,
                   tokenProgram: TOKEN_PROGRAM_ID,
                 }).instruction();
 
                 tx.add(settleIx)
 
-
-
             const closeWSOLAccountIx = createCloseAccountInstruction(
-              currentGameState.p1Ata,
+              p1Ata,
               publicKey,
               publicKey,
             );
@@ -177,21 +277,20 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
             tx.add(closeWSOLAccountIx);
 
 
-                const sig = await sendTransaction(tx, connection)
-                setCurrentGameState({
-                  ...currentGameState,
-                  status: 'acceptingReveal'
-                })
+                setTempStatus('signSettle');
+                const sig = await sendTransaction(tx, connection, {skipPreflight: true})
+                  setTempStatus(null);
                 loadSolBalance();
+                setSettling(false);
                 return sig;
             }
         }
     }
 
-
     useInterval(() => {
       updateState();
     }, 1000);
+
 
     const initializeGame = useCallback((pvp?: boolean) => {
         if (publicKey) {
@@ -215,9 +314,9 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
 
             setCurrentGameState({
               status: 'initialized',
-              seed,
-              salt,
-              game,
+              seed: seed,
+              salt: salt,
+              game: game,
             })
 
             return {
@@ -231,9 +330,9 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
     const createGame = useCallback(async (hand: number) => {
         if (!publicKey) throw ('Wallet not connected');
 
-          let seed;
-          let salt;
-          let game;
+          let seed: Uint8Array;
+          let salt: Uint8Array;
+          let game: PublicKey;
 
           // if (currentGameState) {
           //   if (currentGameState.status !== 'initialized') {
@@ -330,16 +429,19 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
 
               newTxn.add(ix)
 
-              const signature = await sendTransaction(newTxn, connection);
+              setTempStatus('signCreate');
+              const signature = await sendTransaction(newTxn, connection, {skipPreflight: true});
+              setTempStatus(null);
 
               setCurrentGameState({
-                game,
-                seed,
-                salt,
+                status: 'created',
+                game: game,
+                seed: seed,
+                salt: salt,
                 hand,
                 p1Ata: tokenAccount,
-                gameAuthority: gameAuthority.toBase58(),
-                escrowTokenAccount: escrowTokenAccount.toBase58(),
+                gameAuthority: gameAuthority,
+                escrowTokenAccount: escrowTokenAccount,
               })
 
               return signature;
@@ -347,7 +449,7 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
 
     return (
       <StoreContext.Provider
-        value={{gameState, createGame, betSize, setBetSize, solBalance, setSolBalance}}
+        value={{setCurrentGameState, tempStatus, createGame, betSize, setBetSize, solBalance, setSolBalance, parsedGameState}}
       >
         {children}
       </StoreContext.Provider>
