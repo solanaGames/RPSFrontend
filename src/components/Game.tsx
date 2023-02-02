@@ -6,7 +6,6 @@ import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 import ConnectButton from './ConnectButton';
 import AnimatedNumber from './AnimatedNumber';
 import useStore from '../hooks/useStore';
-import { useToast } from '@chakra-ui/react'
 import Title from './Title';
 import Loading from './Loading';
 import Hand, { HANDS } from './Hand';
@@ -35,7 +34,7 @@ function Game() {
     <Box overflow="hidden" height="100vh" bg="#bb81be">
       <Flex bg="#bb81be" paddingY="10%" paddingX={10} paddingTop="0" justify="center" position="relative" overflow="hidden" >
       <Box className='bg' height="100vh"/>
-      <Flex direction="column" align="center">
+      <Flex direction="column" align="center" maxWidth="352px">
       <Title/>
         <Flex direction="column" align="center" justify="space-evenly" position="relative" maxWidth={800} textAlign="center" height="95vh">
         <Flex direction="column" align="center" gap={2}>

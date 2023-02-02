@@ -1,11 +1,7 @@
 import { Menu, MenuItem, MenuButton, Button, MenuList } from "@chakra-ui/react";
-import { 
-  useWalletModal
- } from '@solana/wallet-adapter-react-ui';
-import { useWallet } from "@solana/wallet-adapter-react";
+import { useWallet, WalletNotSelectedError } from "@solana/wallet-adapter-react";
 import { ChevronDownIcon } from "@chakra-ui/icons";
-import { useEffect } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const WALLET_PREFIX_SUFFIX_LENGTH = 6;
 
@@ -15,7 +11,14 @@ export default function ConnectButton() {
 
     useEffect(() => {
       if (walletSelect) {
-        connect();
+
+        try {
+          connect();
+        } catch (e) {
+          if (!(e instanceof WalletNotSelectedError)) {
+            throw e;
+          }
+        }
       }
     }, [wallet, walletSelect])
 

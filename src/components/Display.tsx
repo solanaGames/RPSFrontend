@@ -21,7 +21,7 @@ function Display() {
       message: JSX.Element | null,
     }>({outcome: null, message: null});
     const [isLargerThan800] = useMediaQuery('(min-width: 800px)');
-    const { parsedGameState, tempStatus, setCurrentGameState } = useStore();
+    const { parsedGameState, tempStatus, setCurrentGameState, expireGame } = useStore();
     const fontSize = isLargerThan800 ? 24 : 16;
 
 
@@ -96,10 +96,7 @@ function Display() {
         case 'challengeExpired':
             result = '⏱️';
             message = <Text fontSize={24} marginBottom={-4}>
-                      No one took your challenge in time<br/>Click <a style={{color:"green", cursor: 'pointer'}}  onClick={() => {
-                        console.log('123123');
-                        setCurrentGameState({ status: 'empty'});
-                }}>[here]</a> to claim your wager back.</Text>;
+                      No one took your challenge in time<br/>Click <a style={{color:"green", cursor: 'pointer'}}  onClick={() => expireGame()}>[here]</a> to claim your wager back.</Text>;
           break;
         case 'revealExpired':
             result = '⏱️';

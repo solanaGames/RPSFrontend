@@ -16,7 +16,7 @@ import {Rps, IDL} from '../rps';
 import { keccak_256 } from "js-sha3";
 import { TOKEN_PROGRAM_ID } from '@coral-xyz/anchor/dist/cjs/utils/token';
 import { ASSOCIATED_TOKEN_PROGRAM_ID, getMinimumBalanceForRentExemptAccount, createAssociatedTokenAccountInstruction, getAssociatedTokenAddress, syncNative, createSyncNativeInstruction, createCloseAccountInstruction } from '@solana/spl-token';
-import { Box, useInterval, useTimeout, useToast } from '@chakra-ui/react';
+import { Box, useToast } from '@chakra-ui/react';
 
 window.Buffer = window.Buffer || require("buffer").Buffer;
 
@@ -138,7 +138,12 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
     children,
   }: StoreProviderPropsType): ReactElement {
     const [ping, setPing] = useState(0);
-    const toast = useToast();
+    const toast = useToast({
+      containerStyle: {
+        width: '300px',
+        maxWidth: '100%',
+      },
+    });
     const [tempStatus, setTempStatus] = useState<string | null>(null);
     const [gameState, setGameState] = useLocalStorage<AllGameState>('gameState', {});
     const [solBalance, setSolBalance] = useState<number | null>(0);
@@ -179,7 +184,7 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
       }
     }, [currentGameState, setGameState, publicKey])
 
-    const nominalBetSize = betSize * LAMPORTS_PER_SOL;
+    const nominalBetSize = Math.floor(betSize * LAMPORTS_PER_SOL);
 
     const parsedGameState: ParsedGameState = {
       status: currentGameState.status,
@@ -221,6 +226,7 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
         
         setTempStatus('signExpire');
         sig = await sendTransaction(tx, connection);
+        await loadSolBalance();
         setTempStatus(null);
         toast({
           position: 'bottom-left',
@@ -241,6 +247,7 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
               </Box>
           )
       })
+      console.error(e);
     }
 
     return sig
@@ -248,15 +255,21 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
   }
 
     async function updateState() {
+      console.log('ping');
       let sig = 'Transaction not completed';
       try {
         if (parsedGameState) {
-
           if (!(parsedGameState.status === 'initialized' || parsedGameState.status === 'empty')) {
 
-
           const currentGameKey = parsedGameState.game
-          const gameInstance = await anchorProgram.account.game.fetch(currentGameKey);
+          let gameInstance;
+          try {
+            gameInstance = await anchorProgram.account.game.fetch(currentGameKey);
+          } catch(error) {
+            console.error(error);
+            setPing(ping + 1);
+            return;
+          }
 
           if (gameInstance.state.settled) {
             setCurrentGameState({
@@ -341,10 +354,9 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
             );
 
             tx.add(closeWSOLAccountIx);
-
-
               setTempStatus('signSettle');
-              sig = await sendTransaction(tx, connection, {skipPreflight: true})
+              sig = await sendTransaction(tx, connection)
+              await loadSolBalance();
               setTempStatus(null);
               loadSolBalance();
               setSettling(false);
@@ -361,7 +373,8 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
                 Error: {e.message}
                 </Box>
             )
-        })
+        });
+        console.error(e);
       }
   
       return sig
@@ -370,7 +383,6 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
     useEffect(
       () => {
         if (parsedGameState.status === 'created') {
-          console.log("ping");
           setTimeout(() => updateState(), 1000);
         }
       }, [ping, parsedGameState.status]
@@ -516,9 +528,9 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
               newTxn.add(ix)
 
               setTempStatus('signCreate');
-              sig = await sendTransaction(newTxn, connection, {skipPreflight: true});
+              sig = await sendTransaction(newTxn, connection);
+              await loadSolBalance();
               setTempStatus(null);
-              loadSolBalance();
 
               setCurrentGameState({
                 status: 'created',
@@ -542,6 +554,7 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
                       </Box>
                   )
               })
+              console.error(e);
             }
         
             return sig
