@@ -7,7 +7,7 @@ import useStore from '../hooks/useStore';
 import { HANDS } from './Hand';
 import Loading from './Loading';
 
-function toMultiLine(message: string) {
+function MultiLineText({message}: {message: string}) {
   const [isLargerThan800] = useMediaQuery('(min-width: 800px)');
 
   return <Box height="60px" lineHeight="18px">
@@ -37,11 +37,11 @@ function Display() {
           if (outcome === 'won') emoji = <>👏</>;
           if (outcome === 'lost') emoji = <>👎</>;
           if (outcome === 'tied') emoji = <>🤝</>;
-          setCurrentGameState({ status: 'empty'});
           setOutcome({
             outcome: emoji,
-            message: toMultiLine(`Opponent played ${HANDS[parsedGameState.opponentHand].name}!\nYou ${outcome}! Play again!`),
+            message: <MultiLineText message={`Opponent played ${HANDS[parsedGameState.opponentHand].name}!\nYou ${outcome}! Play again!`}/>
           });
+          setCurrentGameState({ status: 'empty'});
         }, 2000)
       }
     }, [parsedGameState.status])
@@ -53,15 +53,15 @@ function Display() {
       switch(tempStatus) {
         case 'signCreate': 
           result = '✍️';
-          message = toMultiLine('Stake your wager and create the game!\nYou will need to reveal your hand within 5 minutes!');
+          message = <MultiLineText message={'Stake your wager and create the game!\nYou will need to reveal your hand within 5 minutes!'}/>
           break;
         case 'signSettle': 
           result = '✍️';
-          message = toMultiLine('Opponent has commited their hand. Reveal yours!\nThis must be done within the 5 minutes.');
+          message = <MultiLineText message={'Opponent has commited their hand. Reveal yours!\nThis must be done within the 5 minutes.'}/>
           break;
         case 'signSettle': 
             result = '✍️';
-            message = toMultiLine('Sign to return the wager to your wallet.');
+            message = <MultiLineText message={'Sign to return the wager to your wallet.'}/>
             break;
       }
     } else {
@@ -76,7 +76,7 @@ function Display() {
         case 'initialized':
           if (false) {
             result = '✍️';
-            message = toMultiLine('Stake your wager and create the game!\nYou will need to reveal your hand within 5 minutes!');
+            message = <MultiLineText message={'Stake your wager and create the game!\nYou will need to reveal your hand within 5 minutes!'}/>
             break;
           }
           result = null;
@@ -87,7 +87,7 @@ function Display() {
           break;
         case 'created':
             result = '⌛';
-            message = toMultiLine(`You played ${HANDS[parsedGameState.hand].name}!\nWaiting for opponent...`);
+            message = <MultiLineText message={`You played ${HANDS[parsedGameState.hand].name}!\nWaiting for opponent...`}/>
           break;
         case 'challengeExpired':
             result = '⏱️';
@@ -99,11 +99,11 @@ function Display() {
           break;
         case 'revealExpired':
             result = '⏱️';
-            message = toMultiLine(`You lost because you didn't reveal in time.\nYou must reveal within 5 minutes of your opponent.`);
+            message = <MultiLineText message={`You lost because you didn't reveal in time.\nYou must reveal within 5 minutes of your opponent.`}/>
           break;
         case 'settled':
             result = HANDS[parsedGameState.opponentHand].emoji;
-            message = toMultiLine(`Opponent played ${HANDS[parsedGameState.opponentHand].name}!`);
+            message = <MultiLineText message={`Opponent played ${HANDS[parsedGameState.opponentHand].name}!`}/>
 
             break;
         default:

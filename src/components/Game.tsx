@@ -39,10 +39,10 @@ function Game() {
       <Title/>
         <Flex direction="column" align="center" justify="space-evenly" position="relative" maxWidth={800} textAlign="center" height="95vh">
         <Flex direction="column" align="center" gap={2}>
-        <Box paddingTop={8} position="relative"><ConnectButton/></Box>
-        <Box className={publicKey ? "balanceBox" : "balanceBoxHidden"}><Tooltip label={solBalance}>{solBalance ? <Box><Text fontSize={36} fontFamily="inherit">Balance </Text>
+        <Box position="relative"><ConnectButton/></Box>
+        {publicKey && <Box className={publicKey ? "balanceBox" : "balanceBoxHidden"}><Tooltip label={solBalance}>{solBalance ? <Box><Text fontSize={36} fontFamily="inherit">Balance </Text>
       <Flex align="center" className="balance" marginTop={-4} >
-      <AnimatedNumber number={solBalance ?? 0}/><Box paddingRight={2}/><Text fontSize={36} fontFamily="inherit">SOL</Text></Flex></Box> : ' '}</Tooltip></Box>
+      <AnimatedNumber number={solBalance ?? 0}/><Box paddingRight={2}/><Text fontSize={36} fontFamily="inherit">SOL</Text></Flex></Box> : ' '}</Tooltip></Box>}
         </Flex>
         <Display/>
         <Flex width="100%" 
@@ -51,7 +51,7 @@ function Game() {
         <Flex width="100%" 
         direction="column" align="center" marginBottom={publicKey ? undefined : -24}>
         <Text fontSize={24} className={parsedGameState.status === "created" ? "balance greenBlink" : undefined}>{parsedGameState.status === "created" ? "Current wager" : 'Bet size'}: {parsedGameState.status === "created" ? parsedGameState.wager.toFixed(2) : betSize.toFixed(2)} SOL</Text>
-        <Flex gap={8} paddingBottom={2} flexWrap="wrap" width="100%" justify={isLargerThan800 ? "center" : "space-between"}>
+        <Flex paddingTop={1} gap={8} paddingBottom={2} flexWrap="wrap" width="100%" justify={isLargerThan800 ? "center" : "space-between"}>
             {betIncrements.map(size => <Box flexBasis="15%" key={size}>
                 <Button className="eightbit-btn" width={isLargerThan800 ? "64px" : "48px"} onClick={() => {
                   if (betSize === 0.01 && size > 0.01) {
