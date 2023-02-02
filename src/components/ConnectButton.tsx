@@ -5,17 +5,20 @@ import {
 import { useWallet } from "@solana/wallet-adapter-react";
 import { ChevronDownIcon } from "@chakra-ui/icons";
 import { useEffect } from "react";
+import { useState } from "react";
 
 const WALLET_PREFIX_SUFFIX_LENGTH = 6;
 
 export default function ConnectButton() {
     const { disconnect, wallets, select, publicKey, connect, wallet } = useWallet();
-    const { visible, setVisible } = useWalletModal();
+    const [walletSelect, setWalletSelect] = useState<string | null>(null);
 
     useEffect(() => {
-      connect();
-    }, [wallet])
-  console.log('walletbutton', publicKey);
+      if (walletSelect) {
+        connect();
+      }
+    }, [wallet, walletSelect])
+
     return  publicKey ? 
     <Menu gutter={0}>
   <MenuButton as={Button} borderRight="1px solid">
@@ -39,7 +42,8 @@ export default function ConnectButton() {
   </MenuButton>
   <MenuList>
     {wallets.map(wallet => <MenuItem key={wallet.adapter.name} onClick={() => {
-        select(wallet.adapter.name)
+        select(wallet.adapter.name);
+        setWalletSelect(wallet.adapter.name);
     }}>
         {wallet.adapter.name}
     </MenuItem>)}

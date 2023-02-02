@@ -44,6 +44,9 @@ type ParsedCreatedGame = {
 type ParsedChallengeExpired = Omit<ParsedCreatedGame, "status"> & {
   status: 'challengeExpired'
 }
+type ParsedRevealExpired = Omit<ParsedCreatedGame, "status"> & {
+  status: 'revealExpired'
+}
 
 type ParsedSettled = Omit<ParsedCreatedGame, "status"> & {
   status: 'settled',
@@ -51,7 +54,7 @@ type ParsedSettled = Omit<ParsedCreatedGame, "status"> & {
   opponentHand: number,
 }
 
-type ParsedGameState = ParsedEmptyGame | ParsedInitializedGame | ParsedCreatedGame | ParsedChallengeExpired | ParsedSettled;
+type ParsedGameState = ParsedEmptyGame | ParsedInitializedGame | ParsedCreatedGame | ParsedChallengeExpired | ParsedSettled | ParsedRevealExpired;
 
 type EmptyGame = {
   status: 'empty'
@@ -85,7 +88,11 @@ type Settled = Omit<CreatedGame, "status"> & {
   opponentHand: number,
 }
 
-type GameState = EmptyGame | InitializedGame | CreatedGame | ChallengeExpired | Settled;
+type RevealExpired = Omit<CreatedGame, "status"> & {
+  status: 'revealExpired'
+}
+
+type GameState = EmptyGame | InitializedGame | CreatedGame | ChallengeExpired | Settled | RevealExpired;
 
 type AllGameState = {
   [key: string]: GameState
@@ -205,6 +212,8 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
           const currentGameKey = parsedGameState.game
           const gameInstance = await anchorProgram.account.game.fetch(currentGameKey);
 
+          console.log(gameInstance);
+
           if (gameInstance.state.settled) {
             setCurrentGameState({
               ...parsedGameState,
@@ -214,15 +223,27 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
             })
           }
 
-          if (gameInstance.state.acceptingReveal) {
-            const expiry = (gameInstance.state.acceptingReveal as any).expirySlot;
-            console.log(gameInstance);
+          if (gameInstance.state.acceptingChallenge) {
+            const expiry = (gameInstance.state.acceptingChallenge as any).expirySlot;
             const currentSlot = await connection.getSlot();
 
             if (currentSlot > expiry.toNumber()) {
               setCurrentGameState({
                 ...parsedGameState,
                 status: 'challengeExpired',
+              })
+            }
+          }
+
+
+          if (gameInstance.state.acceptingReveal) {
+            const expiry = (gameInstance.state.acceptingReveal as any).expirySlot;
+            const currentSlot = await connection.getSlot();
+
+            if (currentSlot > expiry.toNumber()) {
+              setCurrentGameState({
+                ...parsedGameState,
+                status: 'revealExpired',
               })
             }
           }
@@ -279,8 +300,8 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
 
 
               setTempStatus('signSettle');
-              const sig = await sendTransaction(tx, connection, {skipPreflight: true})
-                setTempStatus(null);
+              await sendTransaction(tx, connection, {skipPreflight: true})
+              setTempStatus(null);
               loadSolBalance();
               setSettling(false);
             }
@@ -292,6 +313,7 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
     useEffect(
       () => {
         if (parsedGameState.status === 'created') {
+          console.log("ping");
           setTimeout(() => updateState(), 1000);
         }
       }, [ping, parsedGameState.status]
@@ -437,6 +459,7 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
               setTempStatus('signCreate');
               const signature = await sendTransaction(newTxn, connection, {skipPreflight: true});
               setTempStatus(null);
+              loadSolBalance();
 
               setCurrentGameState({
                 status: 'created',

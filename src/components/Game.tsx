@@ -44,7 +44,7 @@ function Game() {
       <Flex align="center" className="balance" marginTop={-4} >
       <AnimatedNumber number={solBalance ?? 0}/><Box paddingRight={2}/><Text fontSize={36} fontFamily="inherit">SOL</Text></Flex></Box> : ' '}</Tooltip></Box>
         </Flex>
-        {<Display/>}
+        <Display/>
         <Flex width="100%" 
         direction="column" align="center" gap={4}>
           

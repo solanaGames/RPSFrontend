@@ -82,6 +82,18 @@ function Display() {
             result = '⌛';
             message = toMultiLine(`You played ${HANDS[parsedGameState.hand].name}!\nWaiting for opponent...`);
           break;
+        case 'challengeExpired':
+            result = '⏱️';
+            message = <Text fontSize={24} marginBottom={-4}>
+                      No one took your challenge in time<br/>Click <a style={{color:"green", cursor: 'pointer'}}  onClick={() => {
+                        console.log('123123');
+                        setCurrentGameState({ status: 'empty'});
+                }}>[here]</a> to claim your wager back.</Text>;
+          break;
+        case 'revealExpired':
+            result = '⏱️';
+            message = toMultiLine(`You didn't reveal in time. You must reveal within 5 minutes of your opponent.`);
+          break;
         case 'settled':
             result = HANDS[parsedGameState.opponentHand].emoji;
             message = toMultiLine(`Opponent played ${HANDS[parsedGameState.opponentHand].name}!`);
