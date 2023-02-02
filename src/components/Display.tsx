@@ -59,6 +59,10 @@ function Display() {
           result = '✍️';
           message = <MultiLineText message={'Opponent has commited their hand. Reveal yours!\nThis must be done within the 5 minutes.'}/>
           break;
+        case 'error': 
+            result = '❌';
+            message = <MultiLineText message={'Transaction did not go through. Please refresh and try again.'}/>
+            break;
         case 'signSettle': 
             result = '✍️';
             message = <MultiLineText message={'Sign to return the wager to your wallet.'}/>
@@ -118,12 +122,12 @@ function Display() {
     
   return (
     <>
-      {!result ? <Loading/> : <Box className="hand" height={170} margin-bottom={-100}>
+      {(!result || !publicKey) ? <Loading/> : <Box className="hand" height={170} margin-bottom={-100}>
         <Text fontSize={isLargerThan800 ? 160 : 120}>
           {outcome.outcome ?? result}
         </Text>
     </Box>}
-          {outcome.message ?? message}
+          {publicKey ? (outcome.message ?? message) : null}
       </>
   );
 }

@@ -30,31 +30,10 @@ export const HANDS = {
 
 function Hand({hand} : {hand: number}) {
     const {createGame, parsedGameState} = useStore();
-    const toast = useToast();
     const disabled = parsedGameState.status === 'created';
     return <Text  fontSize={72} className="yourHand" onClick={() => {
         if (!disabled)
-                createGame(hand).then(
-                (hash) => toast({
-                    position: 'bottom-left',
-                    render: () => (
-                    <Box color='white' p={3} bg='blue.500'>
-                        Game created: {hash}
-                    </Box>
-                    )
-                })
-                )
-                .catch((e: Error) => {
-                    toast({
-                    position: 'bottom-left',
-                    render: () => (
-                        <Box color='white' p={3} bg='blue.500'>
-                        Error: {e.message}
-                        </Box>
-                    )
-                })
-            throw e;
-            });
+            createGame(hand)
         }}>
         {HANDS[hand].emoji}
     </Text>
