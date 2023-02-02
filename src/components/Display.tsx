@@ -25,7 +25,7 @@ function Display() {
     const fontSize = isLargerThan800 ? 24 : 16;
 
 
-    useEffect(() => {
+    useEffect(() => { 
       if (parsedGameState.status === 'initialized') {
         setOutcome({outcome: null, message: null});
       }
@@ -37,12 +37,13 @@ function Display() {
           if (outcome === 'won') emoji = <>👏</>;
           if (outcome === 'lost') emoji = <>👎</>;
           if (outcome === 'tied') emoji = <>🤝</>;
+
           setOutcome({
             outcome: emoji,
             message: <MultiLineText message={`Opponent played ${HANDS[parsedGameState.opponentHand].name}!\nYou ${outcome}! Play again!`}/>
           });
-          setCurrentGameState({ status: 'empty'});
-        }, 2000)
+
+        }, 2500)
       }
     }, [parsedGameState.status])
 
@@ -63,9 +64,9 @@ function Display() {
             result = '❌';
             message = <MultiLineText message={'Transaction did not go through.\nPlease refresh and try again.'}/>
             break;
-        case 'signSettle': 
+        case 'signExpired': 
             result = '✍️';
-            message = <MultiLineText message={'Sign to return the wager to your wallet.'}/>
+            message = <MultiLineText message={'Sign transaction to return the wager to your wallet.'}/>
             break;
       }
     } else {
@@ -92,6 +93,7 @@ function Display() {
         case 'created':
             result = '⌛';
             message = <MultiLineText message={`You played ${HANDS[parsedGameState.hand].name}!\nWaiting for opponent...`}/>
+
           break;
         case 'challengeExpired':
             result = '⏱️';
@@ -99,14 +101,15 @@ function Display() {
                       No one took your challenge in time<br/>Click <a style={{color:"green", cursor: 'pointer'}}  onClick={() => expireGame()}>[here]</a> to claim your wager back.</Text>;
           break;
         case 'revealExpired':
-            result = '⏱️';
-            message = <MultiLineText message={`You lost because you didn't reveal in time.\nYou must reveal within 5 minutes of your opponent.`}/>
+          result = '⏱️';
+          message = <MultiLineText message={`You lost because you didn't reveal in time.\nYou must reveal within 5 minutes of your opponent.`}/>
+
           break;
         case 'settled':
-            result = HANDS[parsedGameState.opponentHand].emoji;
-            message = <MultiLineText message={`Opponent played ${HANDS[parsedGameState.opponentHand].name}!`}/>
+          result = HANDS[parsedGameState.opponentHand].emoji;
+          message = <MultiLineText message={`Opponent played ${HANDS[parsedGameState.opponentHand].name}!`}/>
 
-            break;
+          break;
         default:
           result = '❌';
           message = <Text fontSize={24} marginBottom={-4}>
@@ -116,7 +119,7 @@ function Display() {
     }}>[here]</a> to reset.</Text>;
       }
     }
-    
+
   return (
     <>
       {(!result || !publicKey) ? <Loading/> : <Box className="hand" height={170} margin-bottom={-100}>

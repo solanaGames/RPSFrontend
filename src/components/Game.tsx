@@ -49,7 +49,7 @@ function Game() {
           
         <Flex width="100%" 
         direction="column" align="center" marginBottom={publicKey ? undefined : -24}>
-        <Text fontSize={24} className={parsedGameState.status === "created" ? "balance greenBlink" : undefined}>{parsedGameState.status === "created" ? "Current wager" : 'Bet size'}: {parsedGameState.status === "created" ? parsedGameState.wager.toFixed(2) : betSize.toFixed(2)} SOL</Text>
+        <Text fontSize={24} className={parsedGameState.status === "created" ? "greenBlink" : undefined}>{parsedGameState.status === "created" ? "Current wager" : 'Bet size'}: {parsedGameState.status === "created" ? parsedGameState.wager.toFixed(2) : betSize.toFixed(2)} SOL</Text>
         <Flex paddingTop={1} gap={8} paddingBottom={2} flexWrap="wrap" width="100%" justify={isLargerThan800 ? "center" : "space-between"}>
             {betIncrements.map(size => <Box flexBasis="15%" key={size}>
                 <Button className="eightbit-btn" width={isLargerThan800 ? "64px" : "48px"} onClick={() => {
