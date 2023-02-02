@@ -8,8 +8,10 @@ import { HANDS } from './Hand';
 import Loading from './Loading';
 
 function toMultiLine(message: string) {
+  const [isLargerThan800] = useMediaQuery('(min-width: 800px)');
+
   return <Box height="60px" lineHeight="18px">
-  {message.split('\n').map(m => <Text key={m} fontSize={24}>{m}<br/></Text>)}</Box>
+  {message.split('\n').map(m => <Text key={m} fontSize={isLargerThan800 ? 24 : 16}>{m}<br/></Text>)}</Box>
 }
 
 function Display() {
@@ -20,6 +22,7 @@ function Display() {
     }>({outcome: null, message: null});
     const [isLargerThan800] = useMediaQuery('(min-width: 800px)');
     const { parsedGameState, tempStatus, setCurrentGameState } = useStore();
+    const fontSize = isLargerThan800 ? 24 : 16;
 
 
     useEffect(() => {
@@ -37,7 +40,7 @@ function Display() {
           setCurrentGameState({ status: 'empty'});
           setOutcome({
             outcome: emoji,
-            message: toMultiLine(`Opponent played ${HANDS[parsedGameState.opponentHand].name}!\nYou ${outcome}!`),
+            message: toMultiLine(`Opponent played ${HANDS[parsedGameState.opponentHand].name}!\nYou ${outcome}! Play again!`),
           });
         }, 2000)
       }
@@ -56,12 +59,16 @@ function Display() {
           result = '✍️';
           message = toMultiLine('Opponent has commited their hand. Reveal yours!\nThis must be done within the 5 minutes.');
           break;
+        case 'signSettle': 
+            result = '✍️';
+            message = toMultiLine('Sign to return the wager to your wallet.');
+            break;
       }
     } else {
       switch(parsedGameState.status) {
         case 'empty':
           result = null;
-          message = publicKey ? <Text fontSize={isLargerThan800 ? 24 : 16} marginBottom={-4}>
+          message = publicKey ? <Text fontSize={fontSize} marginBottom={-4}>
               Play against against the bot!<br/> Or share this <a style={{color:"blue", cursor: 'pointer'}}  onClick={() => {
           navigator.clipboard.writeText('challenge link');
         }}>[challenge link]</a>!</Text> : null;
@@ -73,7 +80,7 @@ function Display() {
             break;
           }
           result = null;
-            message = publicKey ? <Text fontSize={isLargerThan800 ? 24 : 16} marginBottom={-4}>
+            message = publicKey ? <Text fontSize={fontSize} marginBottom={-4}>
                 Play against against the bot!<br/> Or share this <a style={{color:"blue", cursor: 'pointer'}}  onClick={() => {
             navigator.clipboard.writeText('challenge link');
           }}>[challenge link]</a>!</Text> : null;
@@ -92,7 +99,7 @@ function Display() {
           break;
         case 'revealExpired':
             result = '⏱️';
-            message = toMultiLine(`You didn't reveal in time. You must reveal within 5 minutes of your opponent.`);
+            message = toMultiLine(`You lost because you didn't reveal in time.\nYou must reveal within 5 minutes of your opponent.`);
           break;
         case 'settled':
             result = HANDS[parsedGameState.opponentHand].emoji;

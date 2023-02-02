@@ -36,6 +36,7 @@ type ParsedCreatedGame = {
   salt: Uint8Array;
   seed: Uint8Array;
   hand: number,
+  wager: number,
   p1Ata: PublicKey,
   gameAuthority: PublicKey,
   escrowTokenAccount: PublicKey,
@@ -70,6 +71,7 @@ type InitializedGame = {
 type CreatedGame = {
   status: 'created';
   game: string;
+  wager: number,
   salt: string;
   seed: string;
   hand: number,
@@ -102,6 +104,7 @@ type AllGameState = {
     tempStatus: string | null;
     parsedGameState: ParsedGameState,
     createGame: (choice: number) => Promise<string>,
+    expireGame: () => Promise<string>,
     betSize: number,
     setBetSize: (arg: number) => void,
     solBalance: number,
@@ -113,6 +116,7 @@ type AllGameState = {
     tempStatus: null,
     parsedGameState: {status: 'empty'},
     createGame: () => Promise.resolve(''),
+    expireGame: () => Promise.resolve(''),
     betSize: 0.01,
     setBetSize: () => {},
     solBalance: 0,
@@ -152,7 +156,7 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
             ),
         )).current
 
-    const currentGameState = publicKey ? gameState[publicKey.toBase58()] : {status: 'empty' as 'empty'};
+    const currentGameState = publicKey ? (gameState[publicKey.toBase58()] ?? {status: 'empty' as 'empty'}) : {status: 'empty' as 'empty'};
     const setCurrentGameState = useCallback((newGameState: ParsedGameState) => {
       if (publicKey) {
         setGameState({
@@ -164,6 +168,7 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
             seed: newGameState.status !== 'empty' ? newGameState.seed.toString() : undefined,
             hand: (newGameState.status === 'created' || newGameState.status ===  'settled') ? newGameState.hand : undefined,
             p1Ata: (newGameState.status === 'created' || newGameState.status ===  'settled') ? newGameState.p1Ata.toBase58() : undefined,
+            wager: (newGameState.status === 'created' || newGameState.status ===  'settled') ? newGameState.wager : undefined,
             gameAuthority: (newGameState.status === 'created' || newGameState.status ===  'settled') ? newGameState.gameAuthority.toBase58() : undefined,
             escrowTokenAccount: (newGameState.status === 'created' || newGameState.status ===  'settled') ? newGameState.escrowTokenAccount.toBase58() : undefined,
             opponentHand: newGameState.status === 'settled' ? newGameState.opponentHand : undefined,
@@ -181,6 +186,7 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
       salt: currentGameState.status !== 'empty' ? new Uint8Array(currentGameState.salt.split(',').map(Number)) : undefined,
       seed: currentGameState.status !== 'empty' ? new Uint8Array(currentGameState.seed.split(',').map(Number)) : undefined,
       hand: (currentGameState.status === 'created' || currentGameState.status === 'settled') ? currentGameState.hand : undefined,
+      wager: (currentGameState.status === 'created' || currentGameState.status ===  'settled') ? currentGameState.wager : undefined,
       p1Ata: (currentGameState.status === 'created' || currentGameState.status === 'settled') ? new PublicKey(currentGameState.p1Ata) : undefined,
       gameAuthority: (currentGameState.status === 'created' || currentGameState.status === 'settled') ? new PublicKey(currentGameState.gameAuthority) : undefined,
       escrowTokenAccount: (currentGameState.status === 'created' || currentGameState.status === 'settled') ? new PublicKey(currentGameState.escrowTokenAccount) : undefined,
@@ -203,6 +209,22 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
     }
   }, [publicKey]);
 
+  async function expireGame() {
+    if (parsedGameState.status === 'challengeExpired') {
+      const tx = await anchorProgram.methods.expireGame().accounts({
+        game: parsedGameState.game,
+        player: publicKey,
+      }).transaction();
+      
+      setTempStatus('signExpire');
+      const sig = await sendTransaction(tx, connection);
+      setTempStatus(null);
+      return sig
+    }
+
+    return 'Transaction not completed';
+  }
+
     async function updateState() {
         if (parsedGameState) {
 
@@ -211,8 +233,6 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
 
           const currentGameKey = parsedGameState.game
           const gameInstance = await anchorProgram.account.game.fetch(currentGameKey);
-
-          console.log(gameInstance);
 
           if (gameInstance.state.settled) {
             setCurrentGameState({
@@ -466,6 +486,7 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
                 game: game,
                 seed: seed,
                 salt: salt,
+                wager: betSize,
                 hand,
                 p1Ata: tokenAccount,
                 gameAuthority: gameAuthority,
@@ -477,7 +498,7 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
 
     return (
       <StoreContext.Provider
-        value={{setCurrentGameState, tempStatus, createGame, betSize, setBetSize, solBalance, setSolBalance, parsedGameState}}
+        value={{expireGame, setCurrentGameState, tempStatus, createGame, betSize, setBetSize, solBalance, setSolBalance, parsedGameState}}
       >
         {children}
       </StoreContext.Provider>
