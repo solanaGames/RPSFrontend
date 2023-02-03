@@ -42,7 +42,7 @@ function Display() {
             outcome: emoji,
             message: <MultiLineText message={`Opponent played ${HANDS[parsedGameState.opponentHand].name}!\nYou ${outcome}! Play again!`}/>
           });
-
+          setCurrentGameState({status: 'empty'});
         }, 2500)
       }
     }, [parsedGameState.status])
@@ -92,7 +92,7 @@ function Display() {
           break;
         case 'created':
             result = '⌛';
-            message = <MultiLineText message={`You played ${HANDS[parsedGameState.hand].name}!\nWaiting for opponent...`}/>
+            message = <MultiLineText message={`You played ${HANDS[parsedGameState.hand].name}!\nWaiting for opponent... Stay close! You must reveal within 5 minutes of them playing.`}/>
 
           break;
         case 'challengeExpired':
@@ -114,7 +114,6 @@ function Display() {
           result = '❌';
           message = <Text fontSize={24}>
           Uh oh! Invalid game state. Click <a style={{color:"red", cursor: 'pointer'}}  onClick={() => {
-            console.log('123123');
             setCurrentGameState({ status: 'empty'});
     }}>[here]</a> to reset.</Text>;
       }
@@ -122,7 +121,7 @@ function Display() {
 
   return (
     <>
-      {(!result || !publicKey) ? <Loading/> : <Box className="hand" height={170} margin-bottom={-100}>
+      {(!outcome.outcome && (!result || !publicKey)) ? <Loading/> : <Box className="hand" height={170} margin-bottom={-100}>
         <Text fontSize={isLargerThan800 ? 160 : 120}>
           {outcome.outcome ?? result}
         </Text>
