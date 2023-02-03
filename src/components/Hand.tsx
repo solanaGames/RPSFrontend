@@ -23,7 +23,7 @@ export const HANDS = {
 
 function Hand({hand} : {hand: number}) {
     const {createGame, parsedGameState} = useStore();
-    const disabled = (parsedGameState.status !== 'empty' && parsedGameState.status !== 'initialized'&& parsedGameState.status !== 'settled');
+    const disabled = (parsedGameState.status !== 'empty' && parsedGameState.status !== 'initialized' && parsedGameState.status !== 'settled' && parsedGameState.status !== 'revealExpired');
     return <Text  fontSize={72} className="yourHand" onClick={() => {
         if (!disabled)
             createGame(hand)
