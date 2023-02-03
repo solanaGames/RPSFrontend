@@ -73,7 +73,7 @@ function Display() {
       switch(parsedGameState.status) {
         case 'empty':
           result = null;
-          message = publicKey ? <Text fontSize={fontSize} marginBottom={-4}>
+          message = publicKey ? <Text fontSize={fontSize}>
               Play against against the bot!<br/> Or share this <a style={{color:"blue", cursor: 'pointer'}}  onClick={() => {
           navigator.clipboard.writeText('challenge link');
         }}>[challenge link]</a>!</Text> : null;
@@ -85,7 +85,7 @@ function Display() {
             break;
           }
           result = null;
-            message = publicKey ? <Text fontSize={fontSize} marginBottom={-4}>
+            message = publicKey ? <Text fontSize={fontSize}>
                 Play against against the bot!<br/> Or share this <a style={{color:"blue", cursor: 'pointer'}}  onClick={() => {
             navigator.clipboard.writeText('challenge link');
           }}>[challenge link]</a>!</Text> : null;
@@ -97,7 +97,7 @@ function Display() {
           break;
         case 'challengeExpired':
             result = '⏱️';
-            message = <Text fontSize={24} marginBottom={-4}>
+            message = <Text fontSize={fontSize}>
                       No one took your challenge in time<br/>Click <a style={{color:"green", cursor: 'pointer'}}  onClick={() => expireGame()}>[here]</a> to claim your wager back.</Text>;
           break;
         case 'revealExpired':
@@ -112,7 +112,7 @@ function Display() {
           break;
         default:
           result = '❌';
-          message = <Text fontSize={24} marginBottom={-4}>
+          message = <Text fontSize={24}>
           Uh oh! Invalid game state. Click <a style={{color:"red", cursor: 'pointer'}}  onClick={() => {
             console.log('123123');
             setCurrentGameState({ status: 'empty'});
