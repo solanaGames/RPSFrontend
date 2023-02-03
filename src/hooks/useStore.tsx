@@ -247,7 +247,7 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
         tx.add(closeWSOLAccountIx)
 
         setTempStatus('signExpired');
-        signature = await sendTransaction(tx, connection, {skipPreflight: true});
+        signature = await sendTransaction(tx, connection);
         const latestBlockHash = await connection.getLatestBlockhash();
         await connection.confirmTransaction({
           ...latestBlockHash,
