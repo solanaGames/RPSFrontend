@@ -127,7 +127,7 @@ type AllGameState = {
     children: React.ReactNode;
   };
   
-const PROGRAM_ID = new PublicKey('rpsx2U29nY4LQmzw9kdvc7sgDBYK8N2UXpex3SJofuX');
+const PROGRAM_ID = new PublicKey("rpskpFCUxMTf7uRHBWydZvVGH3J5C37qmbzQHXbBE6j");
 const MINT = new PublicKey('So11111111111111111111111111111111111111112');
 
   export function StoreProvider({
