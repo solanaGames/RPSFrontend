@@ -14,8 +14,6 @@ import NodeWallet from '@coral-xyz/anchor/dist/cjs/nodewallet';
 import { Keypair, LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
 import {Rps, IDL} from '../rps';
 import { keccak_256 } from "js-sha3";
-import { TOKEN_PROGRAM_ID } from '@coral-xyz/anchor/dist/cjs/utils/token';
-import { ASSOCIATED_TOKEN_PROGRAM_ID, getMinimumBalanceForRentExemptAccount, createAssociatedTokenAccountInstruction, getAssociatedTokenAddress, syncNative, createSyncNativeInstruction, createCloseAccountInstruction } from '@solana/spl-token';
 import { Box, useToast } from '@chakra-ui/react';
 
 window.Buffer = window.Buffer || require("buffer").Buffer;
@@ -37,9 +35,8 @@ type ParsedCreatedGame = {
   seed: Uint8Array;
   hand: number,
   wager: number,
-  p1Ata: PublicKey,
+  player1: PublicKey,
   gameAuthority: PublicKey,
-  escrowTokenAccount: PublicKey,
 }
 
 type ParsedChallengeExpired = Omit<ParsedCreatedGame, "status"> & {
@@ -75,9 +72,8 @@ type CreatedGame = {
   salt: string;
   seed: string;
   hand: number,
-  p1Ata: string,
+  player1: string,
   gameAuthority: string,
-  escrowTokenAccount: string,
 }
 
 type ChallengeExpired = Omit<CreatedGame, "status"> & {
@@ -174,10 +170,9 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
             salt: newGameState.status !== 'empty' ? newGameState.salt.toString() : undefined,
             seed: newGameState.status !== 'empty' ? newGameState.seed.toString() : undefined,
             hand: ongoingState ? newGameState.hand : undefined,
-            p1Ata: ongoingState ? newGameState.p1Ata.toBase58() : undefined,
+            player1: ongoingState ? newGameState.player1.toBase58() : undefined,
             wager: ongoingState ? newGameState.wager : undefined,
             gameAuthority: ongoingState ? newGameState.gameAuthority.toBase58() : undefined,
-            escrowTokenAccount: ongoingState ? newGameState.escrowTokenAccount.toBase58() : undefined,
             opponentHand: newGameState.status === 'settled' ? newGameState.opponentHand : undefined,
             result: newGameState.status === 'settled' ? newGameState.result : undefined,
           }
@@ -196,9 +191,8 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
       seed: currentGameState.status !== 'empty' ? new Uint8Array(currentGameState.seed.split(',').map(Number)) : undefined,
       hand: ongoingState ? currentGameState.hand : undefined,
       wager: ongoingState ? currentGameState.wager : undefined,
-      p1Ata: ongoingState ? new PublicKey(currentGameState.p1Ata) : undefined,
+      player1: ongoingState ? new PublicKey(currentGameState.player1) : undefined,
       gameAuthority: ongoingState ? new PublicKey(currentGameState.gameAuthority) : undefined,
-      escrowTokenAccount: ongoingState ? new PublicKey(currentGameState.escrowTokenAccount) : undefined,
       opponentHand: currentGameState.status === 'settled' ? currentGameState.opponentHand : undefined,
       result: currentGameState.status === 'settled' ? currentGameState.result : undefined,
     };
@@ -229,22 +223,13 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
         
         const settleIx = await anchorProgram.methods.settleGame().accounts({
           game: parsedGameState.game,
-          player1TokenAccount: parsedGameState.p1Ata,
-          player2TokenAccount: parsedGameState.p1Ata,
+          player1: parsedGameState.player1,
+          player2: parsedGameState.player1,
           gameAuthority: parsedGameState.gameAuthority,
-          escrowTokenAccount: parsedGameState.escrowTokenAccount,
-          tokenProgram: TOKEN_PROGRAM_ID,
+          systemProgram: anchor.web3.SystemProgram.programId,
         }).instruction();
 
         tx.add(settleIx)
-
-        const closeWSOLAccountIx = createCloseAccountInstruction(
-          parsedGameState.p1Ata,
-          publicKey,
-          publicKey,
-        );
-
-        tx.add(closeWSOLAccountIx)
 
         setTempStatus('signExpired');
         signature = await sendTransaction(tx, connection);
@@ -347,45 +332,18 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
                   game: currentGameKey,
                 }).transaction();
 
-                const p1Ata = parsedGameState.p1Ata;
+                const player1 = parsedGameState.player1;
 
-              const p2Ata = await getAssociatedTokenAddress(
-                MINT,
-                (gameInstance.state.acceptingReveal as any).player2.revealed.pubkey,
-              )
-
-              const userWSOLAccountInfo = Boolean(await connection.getAccountInfo(
-                p1Ata,
-            ));
-
-            if (!userWSOLAccountInfo) {
-              const createUserWSOLAccountIx = createAssociatedTokenAccountInstruction(
-                  publicKey,
-                  p1Ata,
-                  publicKey,
-                  MINT,
-              );
-
-              tx.add(createUserWSOLAccountIx)
-          }
                 const settleIx = await anchorProgram.methods.settleGame().accounts({
                   game: currentGameKey,
-                  player1TokenAccount: p1Ata,
-                  player2TokenAccount: p2Ata,
+                  player1: (gameInstance.state.acceptingReveal as any).player1.revealed.pubkey,
+                  player2: (gameInstance.state.acceptingReveal as any).player2.revealed.pubkey,
                   gameAuthority: parsedGameState.gameAuthority,
-                  escrowTokenAccount: parsedGameState.escrowTokenAccount,
-                  tokenProgram: TOKEN_PROGRAM_ID,
+                  systemProgram: anchor.web3.SystemProgram.programId,
                 }).instruction();
 
                 tx.add(settleIx)
 
-            const closeWSOLAccountIx = createCloseAccountInstruction(
-              p1Ata,
-              publicKey,
-              publicKey,
-            );
-
-            tx.add(closeWSOLAccountIx);
               setTempStatus('signSettle');
               signature = await sendTransaction(tx, connection)
               const latestBlockHash = await connection.getLatestBlockhash();
@@ -484,11 +442,6 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
             game = res.game;
           // }
 
-          const tokenAccount = await getAssociatedTokenAddress(
-              MINT,
-              publicKey,
-            )
-
           const [gameAuthority, _gameAuthorityBump] =
           PublicKey.findProgramAddressSync(
             [
@@ -498,54 +451,14 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
             PROGRAM_ID
           );
 
-          const [escrowTokenAccount, _escrowTokenAccountBump] =
-            PublicKey.findProgramAddressSync(
-              [
-                Buffer.from(anchor.utils.bytes.utf8.encode("escrow")),
-                game.toBuffer(),
-              ],
-              PROGRAM_ID
-            );
-
             const commitment = Buffer.from(keccak_256(Buffer.concat([
                 publicKey.toBuffer(),
                 new anchor.BN(salt).toArrayLike(Buffer, "le", 8),
                 new anchor.BN(hand).toArrayLike(Buffer, "le", 1),
               ])), "hex");
 
-              const userWSOLAccountInfo = Boolean(await connection.getAccountInfo(
-                tokenAccount,
-            ));
-
             const newTxn = new Transaction()
 
-            const rentExempt = await getMinimumBalanceForRentExemptAccount(
-                connection,
-            );
-
-            const transferLamportsIx = SystemProgram.transfer({
-                fromPubkey: publicKey,
-                toPubkey: tokenAccount,
-                lamports:
-                  (userWSOLAccountInfo ? 0 : rentExempt) +
-                  (nominalBetSize),
-              });
-
-            if (userWSOLAccountInfo) {
-                const syncIx = await createSyncNativeInstruction(tokenAccount);
-                newTxn.add(transferLamportsIx)
-                newTxn.add(syncIx)
-            } else {
-                const createUserWSOLAccountIx = createAssociatedTokenAccountInstruction(
-                    publicKey,
-                    tokenAccount,
-                    publicKey,
-                    MINT,
-                );
-                
-                newTxn.add(transferLamportsIx)
-                newTxn.add(createUserWSOLAccountIx)
-            }
               const ix = await anchorProgram.methods.createGame(
                 new anchor.BN(seed),
                 commitment.toJSON().data,
@@ -554,13 +467,8 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
               ).accounts({
                 game,
                 player: publicKey,
-                mint: MINT,
-                playerTokenAccount: tokenAccount,
                 gameAuthority: gameAuthority,
-                escrowTokenAccount: escrowTokenAccount,
-                tokenProgram: TOKEN_PROGRAM_ID,
                 systemProgram: anchor.web3.SystemProgram.programId,
-                associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
               }).instruction();
 
               newTxn.add(ix)
@@ -576,16 +484,15 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
               setTempStatus(null);
 
               setCurrentGameState({
-                status: 'created',
+                status: "created",
                 game: game,
                 seed: seed,
                 salt: salt,
                 wager: betSize,
                 hand,
-                p1Ata: tokenAccount,
+                player1: publicKey,
                 gameAuthority: gameAuthority,
-                escrowTokenAccount: escrowTokenAccount,
-              })
+              });
 
             } catch (e: any) {
                 setTempStatus('error');
