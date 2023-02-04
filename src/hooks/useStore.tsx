@@ -336,7 +336,7 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
 
                 const settleIx = await anchorProgram.methods.settleGame().accounts({
                   game: currentGameKey,
-                  player1: (gameInstance.state.acceptingReveal as any).player1.revealed.pubkey,
+                  player1: (gameInstance.state.acceptingReveal as any).player1.committed.pubkey,
                   player2: (gameInstance.state.acceptingReveal as any).player2.revealed.pubkey,
                   gameAuthority: parsedGameState.gameAuthority,
                   systemProgram: anchor.web3.SystemProgram.programId,
