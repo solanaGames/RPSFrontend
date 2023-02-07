@@ -2,6 +2,7 @@
 
 import { Box, Text, useMediaQuery } from '@chakra-ui/react'
 import { useWallet } from '@solana/wallet-adapter-react';
+import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { ReactNode, useEffect, useState } from 'react';
 import useStore from '../hooks/useStore';
 import { HANDS } from './Hand';
@@ -21,12 +22,15 @@ function Display() {
       message: JSX.Element | null,
     }>({outcome: null, message: null});
     const [isLargerThan800] = useMediaQuery('(min-width: 800px)');
-    const { parsedGameState, tempStatus, setCurrentGameState, expireGame } = useStore();
+    const { setBetSize, setTempStatus, parsedGameState, tempStatus, setCurrentGameState, expireGame, initializeGame } = useStore();
     const fontSize = isLargerThan800 ? 24 : 16;
 
+    useEffect(() => {
+      setOutcome({outcome: null, message: null});
+    }, [tempStatus.status])
 
     useEffect(() => { 
-      if (parsedGameState.status === 'initialized') {
+      if (parsedGameState.status === 'initialized' || parsedGameState.status === 'created') {
         setOutcome({outcome: null, message: null});
       }
 
@@ -37,24 +41,91 @@ function Display() {
           if (outcome === 'won') emoji = <>👏</>;
           if (outcome === 'lost') emoji = <>👎</>;
           if (outcome === 'tied') emoji = <>🤝</>;
+          const pvp = parsedGameState.gameLink
 
           setOutcome({
             outcome: emoji,
-            message: <MultiLineText message={`Opponent played ${HANDS[parsedGameState.opponentHand].name}!\nYou ${outcome}! Play again!`}/>
+            message: <Text fontSize={fontSize}>
+                      Opponent played {HANDS[parsedGameState.opponentHand].name}!<br/>You {outcome}! Replay opponent or
+                      <br/> <a style={{color:"blue", cursor: 'pointer'}}  onClick={() => {
+            setCurrentGameState({
+              status: 'empty',
+            });
+              setOutcome({outcome: null, message: null});
+          }}>[Play a bot]</a></Text>
           });
-          setCurrentGameState({status: 'empty'});
+          if (!pvp) {
+            setCurrentGameState({
+              status: 'empty',
+            });
+          }
         }, 2500)
       }
     }, [parsedGameState.status])
 
+    useEffect(() => { 
+      if (tempStatus.status === 'challengedSettled') {
+        setTimeout(() => {
+          const outcome = tempStatus.secondaryData.result;
+          let emoji: JSX.Element;
+          if (outcome === 'won') emoji = <>👏</>;
+          if (outcome === 'lost') emoji = <>👎</>;
+          if (outcome === 'tied') emoji = <>🤝</>;
+
+          setOutcome({
+            outcome: emoji,
+            message: <Text fontSize={fontSize}>
+                      Opponent played {HANDS[tempStatus.secondaryData.choice].name}!<br/>You {outcome}! Waiting for opponent to replay...
+                      <br/><a style={{color:"blue", cursor: 'pointer'}}  onClick={() => {
+                  window.history.pushState({}, document.title, "/" );
+                  setTempStatus({status: null});
+          }}>[Play a bot]</a></Text>
+          });
+        }, 2500)
+      }
+    }, [tempStatus.status])
+
     let result: ReactNode;
     let message: ReactNode;
 
-    if (tempStatus) {
-      switch(tempStatus) {
+    if (tempStatus.status) {
+      switch(tempStatus.status) {
+        case 'waiting':
+          result = '⌛';
+          message = <MultiLineText message={`You were challenged to a game.\nWaiting for opponent...`}/>
+          message = <Text fontSize={fontSize}>
+                      You were challenged to a game.<br/>Waiting for opponent...<br/><a style={{color:"blue", cursor: 'pointer'}}  onClick={() => {
+                  window.history.pushState({}, document.title, "/" );
+                  setTempStatus({status: null});
+          }}>[Play a bot]</a></Text>
+          break;
+        case 'challengedExpired':
+          result = '⏱️';
+          message = <Text fontSize={fontSize}>
+                      Challenge has expired!<br/> Wait for a rematch or <a style={{color:"blue", cursor: 'pointer'}}  onClick={() => {
+                  window.history.pushState({}, document.title, "/" );
+          }}>[play a bot]</a>!</Text>
+          break;
+        case 'challengedTurn':
+            result = '🫵';
+            message = <MultiLineText message={`You were challenged for ${tempStatus.secondaryData.amount} SOL.\nYou have 5 minutes to make your move.`}/>
+            setBetSize(tempStatus.secondaryData.amount);
+            break;
+        case 'challengedSettled':
+          result = HANDS[tempStatus.secondaryData.choice].emoji;
+          message = <MultiLineText message={`Opponent played ${HANDS[tempStatus.secondaryData.choice].name}!`}/>
+          break;
+        case 'acceptingReveal':
+          result = '⌛';
+          message = <MultiLineText message={`You chose ${HANDS[tempStatus.secondaryData.choice].name}.\nWaiting for opponent to reveal...`}/>
+          break;
         case 'signCreate': 
           result = '✍️';
           message = <MultiLineText message={'Stake your wager and create the game!\nYou will need to reveal your hand within 5 minutes!'}/>
+          break;
+        case 'signJoin': 
+          result = '✍️';
+          message = <MultiLineText message={'Sign to join game.'}/>
           break;
         case 'signSettle': 
           result = '✍️';
@@ -62,7 +133,11 @@ function Display() {
           break;
         case 'error': 
             result = '❌';
-            message = <MultiLineText message={'Transaction did not go through.\nPlease refresh and try again.'}/>
+            message = <Text fontSize={24}>
+          Transaction did not go through.<br/>Please refresh and try again. Click <a style={{color:"red", cursor: 'pointer'}}  onClick={() => {
+            setCurrentGameState({ status: 'empty'});
+            window.location.reload();
+    }}>[here]</a> to abandon current game.</Text>;
             break;
         case 'signExpired': 
             result = '✍️';
@@ -74,21 +149,18 @@ function Display() {
         case 'empty':
           result = null;
           message = publicKey ? <Text fontSize={fontSize}>
-              Play against against the bot!<br/> Or share this <a style={{color:"blue", cursor: 'pointer'}}  onClick={() => {
-          navigator.clipboard.writeText('challenge link');
-        }}>[challenge link]</a>!</Text> : null;
+              Play against the bot!<br/> Or share this <a style={{color:"blue", cursor: 'pointer'}}  onClick={() => {
+                  const state = initializeGame(true);
+                  navigator.clipboard.writeText(state.gameLink);
+          }}>[challenge link]</a>!</Text> : null;
           break;
         case 'initialized':
-          if (false) {
-            result = '✍️';
-            message = <MultiLineText message={'Stake your wager and create the game!\nYou will need to reveal your hand within 5 minutes!'}/>
-            break;
-          }
           result = null;
-            message = publicKey ? <Text fontSize={fontSize}>
-                Play against against the bot!<br/> Or share this <a style={{color:"blue", cursor: 'pointer'}}  onClick={() => {
-            navigator.clipboard.writeText('challenge link');
-          }}>[challenge link]</a>!</Text> : null;
+          message = publicKey ? <Text fontSize={fontSize}>
+              Challenging a player!<br/>Share your <a style={{color:"blue", cursor: 'pointer'}}  onClick={() => {
+                const state = initializeGame(true);
+                navigator.clipboard.writeText(state.gameLink);
+        }}>[challenge link]</a>!</Text> : null;
           break;
         case 'created':
             result = '⌛';
@@ -115,6 +187,7 @@ function Display() {
           message = <Text fontSize={24}>
           Uh oh! Invalid game state. Click <a style={{color:"red", cursor: 'pointer'}}  onClick={() => {
             setCurrentGameState({ status: 'empty'});
+            window.location.reload();
     }}>[here]</a> to reset.</Text>;
       }
     }

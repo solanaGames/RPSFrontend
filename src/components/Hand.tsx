@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import logo from './logo.svg';
-import { Box, Button, Card, ChakraProvider, Flex, List, ListItem, Spacer, Text, Tooltip, useMediaQuery } from '@chakra-ui/react'
+import { Text } from '@chakra-ui/react'
 import useStore from '../hooks/useStore';
 
 export const HANDS = {
@@ -22,11 +21,16 @@ export const HANDS = {
 }
 
 function Hand({hand} : {hand: number}) {
-    const {createGame, parsedGameState} = useStore();
-    const disabled = (parsedGameState.status !== 'empty' && parsedGameState.status !== 'initialized' && parsedGameState.status !== 'settled' && parsedGameState.status !== 'revealExpired');
+    const { acceptChallenge, createGame, parsedGameState, tempStatus } = useStore();
+    const enabled = (tempStatus.status === 'challengedTurn') || !(parsedGameState.status !== 'empty' && parsedGameState.status !== 'initialized' && parsedGameState.status !== 'settled' && parsedGameState.status !== 'revealExpired');
     return <Text  fontSize={72} className="yourHand" onClick={() => {
-        if (!disabled)
+        if (enabled)
+            if (tempStatus.status === 'challengedTurn') {
+                acceptChallenge(hand)
+                return;
+            } 
             createGame(hand)
+            
         }}>
         {HANDS[hand].emoji}
     </Text>

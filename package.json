@@ -5,7 +5,7 @@
   "dependencies": {
     "@chakra-ui/icons": "^2.0.17",
     "@chakra-ui/react": "^2.4.9",
-    "@coral-xyz/anchor": "^0.26.0",
+    "@coral-xyz/anchor": "https://github.com/coral-xyz/anchor.git",
     "@emotion/react": "^11.10.5",
     "@emotion/styled": "^11.10.5",
     "@solana/spl-token": "^0.3.7",

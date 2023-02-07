@@ -12,24 +12,20 @@ import Hand, { HANDS } from './Hand';
 import Display from './Display';
 
 function Game() { 
-    const [message, setMessage] = useState<string | null>(' ');
     const [aboutOpen, setAboutOpen] = useState<boolean>(false);
     const [isLargerThan800] = useMediaQuery('(min-width: 800px)');
     const { publicKey} = useWallet();
-    const { parsedGameState, betSize, setBetSize, solBalance, setSolBalance } = useStore();
+    const { parsedGameState, betSize, setBetSize, solBalance, challenged, tempStatus } = useStore();
 
-    useEffect(() => {
-      if (!publicKey) {
-        setMessage(' ')
-      }
-    }, [publicKey]);
-
-    const chosenHand = parsedGameState.status === 'created' ? parsedGameState.hand : null;
+    const chosenHand = challenged ?
+    (tempStatus.status === 'challenged' ? tempStatus.secondaryData?.choice : null)
+      : (parsedGameState.status === 'created' ? parsedGameState.hand : null);
 
     const disabled = (chosenHand !== undefined && chosenHand !== null);
 
     const betIncrements = [0.01,0.1,1];
 
+    console.log(solBalance, publicKey?.toBase58());
   return (
     <Box overflow="hidden" height="100vh" bg="#bb81be">
       <Flex bg="#bb81be" paddingY="10%" paddingX={10} paddingTop="0" justify="center" position="relative" overflow="hidden" >

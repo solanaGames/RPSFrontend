@@ -34,7 +34,10 @@
         {
           "name": "commitment",
           "type": {
-            "array": ["u8", 32]
+            "array": [
+              "u8",
+              32
+            ]
           }
         },
         {
@@ -45,7 +48,10 @@
           "name": "entryProof",
           "type": {
             "option": {
-              "array": ["u8", 32]
+              "array": [
+                "u8",
+                32
+              ]
             }
           }
         }
@@ -233,7 +239,10 @@
             "name": "entryProof",
             "type": {
               "option": {
-                "array": ["u8", 32]
+                "array": [
+                  "u8",
+                  32
+                ]
               }
             }
           }
@@ -289,7 +298,10 @@
               {
                 "name": "commitment",
                 "type": {
-                  "array": ["u8", 32]
+                  "array": [
+                    "u8",
+                    32
+                  ]
                 }
               }
             ]
@@ -444,7 +456,10 @@
               {
                 "name": "commitment",
                 "type": {
-                  "array": ["u8", 32]
+                  "array": [
+                    "u8",
+                    32
+                  ]
                 }
               },
               {
