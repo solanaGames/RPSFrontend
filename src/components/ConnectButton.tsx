@@ -5,6 +5,13 @@ import { useEffect, useState } from "react";
 
 const WALLET_PREFIX_SUFFIX_LENGTH = 6;
 
+export function shortenKey(key: string) {
+  return `${key.slice(
+    0,
+    WALLET_PREFIX_SUFFIX_LENGTH,
+  )}...${key.slice(-WALLET_PREFIX_SUFFIX_LENGTH)}`
+}
+
 export default function ConnectButton() {
     const { disconnect, wallets, select, publicKey, connect, wallet } = useWallet();
     const [walletSelect, setWalletSelect] = useState<string | null>(null);
@@ -25,10 +32,7 @@ export default function ConnectButton() {
     return  publicKey ? 
     <Menu gutter={0}>
   <MenuButton as={Button} borderRight="1px solid">
-  {`${publicKey.toBase58().slice(
-        0,
-        WALLET_PREFIX_SUFFIX_LENGTH,
-      )}...${publicKey.toBase58().slice(-WALLET_PREFIX_SUFFIX_LENGTH)}`} <ChevronDownIcon />
+  {shortenKey(publicKey.toBase58())} <ChevronDownIcon />
   </MenuButton>
   <MenuList>
     <MenuItem onClick={() => disconnect()}>Disconnect</MenuItem>

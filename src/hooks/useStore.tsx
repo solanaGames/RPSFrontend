@@ -55,6 +55,7 @@ type ParsedSettled = Omit<ParsedCreatedGame, "status"> & {
   status: 'settled',
   result: 'won' | 'lost' | 'tied',
   opponentHand: number,
+  player2: PublicKey,
 }
 
 type ParsedGameState = ParsedEmptyGame | ParsedInitializedGame | ParsedCreatedGame | ParsedChallengeExpired | ParsedSettled | ParsedRevealExpired;
@@ -94,6 +95,7 @@ type Settled = Omit<CreatedGame, "status"> & {
   status: 'settled',
   result: 'won' | 'lost' | 'tied',
   opponentHand: number,
+  player2: string,
 }
 
 type RevealExpired = Omit<CreatedGame, "status"> & {
@@ -216,6 +218,7 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
             gameLink: !initialState ? newGameState.gameLink : undefined,
             hand: ongoingState ? newGameState.hand : undefined,
             player1: ongoingState ? newGameState.player1.toBase58() : undefined,
+            player2: newGameState.status === 'settled' ? newGameState.player2.toBase58() : undefined,
             wager: ongoingState ? newGameState.wager : undefined,
             gameAuthority: ongoingState || newGameState.status ===  'initialized' ? newGameState.gameAuthority.toBase58() : undefined,
             opponentHand: newGameState.status === 'settled' ? newGameState.opponentHand : undefined,
@@ -240,6 +243,7 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
       hand: ongoingState ? currentGameState.hand : undefined,
       wager: ongoingState ? currentGameState.wager : undefined,
       player1: ongoingState ? new PublicKey(currentGameState.player1) : undefined,
+      player2: currentGameState.status === 'settled' ? new PublicKey(currentGameState.player2) : undefined,
       gameAuthority: ongoingState || currentGameState.status ===  'initialized' ? new PublicKey(currentGameState.gameAuthority) : undefined,
       opponentHand: currentGameState.status === 'settled' ? currentGameState.opponentHand : undefined,
       result: currentGameState.status === 'settled' ? currentGameState.result : undefined,
@@ -339,6 +343,7 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
               ...parsedGameState,
               result: ['won', 'lost', 'tied'][[gameInstance.state.settled.result.p1,gameInstance.state.settled.result.p2, gameInstance.state.settled.result.tie].findIndex(Boolean)] as 'won' | 'lost' | 'tied',
               opponentHand: [gameInstance.state.settled.player2.revealed.choice.rock,gameInstance.state.settled.player2.revealed.choice.paper,gameInstance.state.settled.player2.revealed.choice.scissors].findIndex(Boolean),
+              player2: gameInstance.state.settled.player2.revealed.pubkey,
               status: 'settled'
             })
             return;
@@ -479,6 +484,7 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
     }
 
     async function updateChallenge() {    
+      console.log(tempStatus)
       // double check pvp hasn't been cancelled since the last timeout was set
         const queryParams = Object.fromEntries((new URLSearchParams(window.location.search)).entries()) as {
           game: string | null,
@@ -501,7 +507,6 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
           setPing(ping + 1);
           return;
         }
-        console.log(gameInstance);
 
         if (gameInstance.state.acceptingChallenge) {
           const expiry = gameInstance.state.acceptingChallenge.expirySlot;
@@ -515,6 +520,7 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
 
           setTempStatus({status: 'challengedTurn',
             secondaryData: {
+              opponent: gameInstance.state.acceptingChallenge.player1.committed.pubkey.toBase58(),
               amount: gameInstance.wagerAmount.toNumber() / LAMPORTS_PER_SOL
             },
           });
@@ -538,6 +544,7 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
           setTempStatus({
             status: 'challengedSettled',
             secondaryData: {
+              opponent: gameInstance.state.settled.player1.revealed.pubkey.toBase58(),
               result: ['won', 'lost', 'tied'][[gameInstance.state.settled.result.p2,gameInstance.state.settled.result.p1, gameInstance.state.settled.result.tie].findIndex(Boolean)] as 'won' | 'lost' | 'tied',
               choice: [
                 gameInstance.state.settled.player1.revealed.choice.rock,

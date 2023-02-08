@@ -110,6 +110,10 @@ $reset-shadow-color:  #8C2022;
     }
 }
 
+.yourDisabledHand {
+  opacity: 0.5;
+}
+
 .disabledHand {
   -webkit-animation: wiggle 0.5s linear infinite;
   -moz-animation: wiggle 0.5s linear infinite;

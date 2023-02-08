@@ -21,16 +21,16 @@ export const HANDS = {
 }
 
 function Hand({hand} : {hand: number}) {
-    const { acceptChallenge, createGame, parsedGameState, tempStatus } = useStore();
-    const enabled = (tempStatus.status === 'challengedTurn') || !(parsedGameState.status !== 'empty' && parsedGameState.status !== 'initialized' && parsedGameState.status !== 'settled' && parsedGameState.status !== 'revealExpired');
-    return <Text  fontSize={72} className="yourHand" onClick={() => {
-        if (enabled)
+    const { acceptChallenge, createGame, parsedGameState, tempStatus, challenged } = useStore();
+    const enabled = challenged ? (tempStatus.status === 'challengedTurn') : (parsedGameState.status === 'empty' || parsedGameState.status === 'initialized' || parsedGameState.status === 'settled' || parsedGameState.status === 'revealExpired');
+    return <Text  fontSize={72} className={enabled ? "yourHand" : "yourDisabledHand"} onClick={() => {
+        if (enabled) {
             if (tempStatus.status === 'challengedTurn') {
                 acceptChallenge(hand)
                 return;
             } 
             createGame(hand)
-            
+        }
         }}>
         {HANDS[hand].emoji}
     </Text>

@@ -2,9 +2,9 @@
 
 import { Box, Text, useMediaQuery } from '@chakra-ui/react'
 import { useWallet } from '@solana/wallet-adapter-react';
-import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { ReactNode, useEffect, useState } from 'react';
 import useStore from '../hooks/useStore';
+import { shortenKey } from './ConnectButton';
 import { HANDS } from './Hand';
 import Loading from './Loading';
 
@@ -46,13 +46,13 @@ function Display() {
           setOutcome({
             outcome: emoji,
             message: <Text fontSize={fontSize}>
-                      Opponent played {HANDS[parsedGameState.opponentHand].name}!<br/>You {outcome}! Replay opponent or
+                      Opponent played {HANDS[parsedGameState.opponentHand].name}!<br/>You {outcome}!{pvp ? <>{' '}Replay {shortenKey(parsedGameState.player2.toBase58())} or
                       <br/> <a style={{color:"blue", cursor: 'pointer'}}  onClick={() => {
             setCurrentGameState({
               status: 'empty',
             });
               setOutcome({outcome: null, message: null});
-          }}>[Play a bot]</a></Text>
+          }}>[Play a bot]</a></> : null}</Text>
           });
           if (!pvp) {
             setCurrentGameState({
@@ -75,7 +75,7 @@ function Display() {
           setOutcome({
             outcome: emoji,
             message: <Text fontSize={fontSize}>
-                      Opponent played {HANDS[tempStatus.secondaryData.choice].name}!<br/>You {outcome}! Waiting for opponent to replay...
+                      Opponent played {HANDS[tempStatus.secondaryData.choice].name}!<br/>You {outcome}! Waiting for {shortenKey(tempStatus.secondaryData.opponent)} to replay or{' '}
                       <br/><a style={{color:"blue", cursor: 'pointer'}}  onClick={() => {
                   window.history.pushState({}, document.title, "/" );
                   setTempStatus({status: null});
@@ -108,14 +108,14 @@ function Display() {
           break;
         case 'challengedTurn':
             result = '🫵';
-            message = <MultiLineText message={`You were challenged for ${tempStatus.secondaryData.amount} SOL.\nYou have 5 minutes to make your move.`}/>
+            message = <MultiLineText message={`You were challenged by ${shortenKey(tempStatus.secondaryData.opponent)} for ${tempStatus.secondaryData.amount} SOL.\nYou have 5 minutes to make your move.`}/>
             setBetSize(tempStatus.secondaryData.amount);
             break;
         case 'challengedSettled':
           result = HANDS[tempStatus.secondaryData.choice].emoji;
           message = <MultiLineText message={`Opponent played ${HANDS[tempStatus.secondaryData.choice].name}!`}/>
           break;
-        case 'acceptingReveal':
+        case 'awaitingReveal':
           result = '⌛';
           message = <MultiLineText message={`You chose ${HANDS[tempStatus.secondaryData.choice].name}.\nWaiting for opponent to reveal...`}/>
           break;
@@ -164,7 +164,7 @@ function Display() {
           break;
         case 'created':
             result = '⌛';
-            message = <MultiLineText message={`You played ${HANDS[parsedGameState.hand].name}!\nWaiting for opponent... Stay close! You must reveal within 5 minutes of them playing.`}/>
+            message = <MultiLineText message={`You played ${HANDS[parsedGameState.hand].name}!\nWaiting for opponent...\nStay close!\nYou must reveal within 5 minutes of them playing.`}/>
 
           break;
         case 'challengeExpired':
