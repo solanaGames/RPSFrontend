@@ -376,18 +376,18 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
             }
           }
 
-          if (gameInstance.state.acceptingReveal) {
-            const expiry = gameInstance.state.acceptingReveal.expirySlot;
-            const currentSlot = await connection.getSlot();
+          // if (gameInstance.state.acceptingReveal) {
+          //   const expiry = gameInstance.state.acceptingReveal.expirySlot;
+          //   const currentSlot = await connection.getSlot();
 
-            if (currentSlot > expiry.toNumber()) {
-              setCurrentGameState({
-                ...parsedGameState,
-                status: 'revealExpired',
-              })
-              return;
-            }
-          }
+          //   if (currentSlot > expiry.toNumber()) {
+          //     setCurrentGameState({
+          //       ...parsedGameState,
+          //       status: 'revealExpired',
+          //     })
+          //     return;
+          //   }
+          // }
 
           if (gameInstance.state.acceptingReveal && parsedGameState.status === 'created' && !settling) {
                 setSettling(true);
@@ -408,7 +408,10 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
                   ],
                   PROGRAM_ID
               );
+              const p1 = await anchorProgram.account.playerInfo.fetch(playerInfo)
+              const p2 = await anchorProgram.account.playerInfo.fetch(player2Info)
 
+              console.log(p1, p2, playerInfo.toBase58(), player2Info.toBase58());
                 const settleIx = await anchorProgram.methods.settleGame().accounts({
                   game: currentGameKey,
                   player1: (gameInstance.state.acceptingReveal as any).player1.committed.pubkey,
@@ -422,7 +425,7 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
                 tx.add(settleIx)
 
               setTempStatus({status: 'signSettle'});
-              signature = await sendTransaction(tx, connection)
+              signature = await sendTransaction(tx, connection, {skipPreflight: true})
               const latestBlockHash = await connection.getLatestBlockhash();
               await connection.confirmTransaction({
                 ...latestBlockHash,
