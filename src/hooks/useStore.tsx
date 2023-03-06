@@ -4,6 +4,7 @@ import React, {
     useCallback,
     useContext,
     useEffect,
+    useMemo,
     useRef,
     useState,
   } from 'react';
@@ -160,7 +161,7 @@ type AllGameState = {
     children: React.ReactNode;
   };
   
-const PROGRAM_ID = new PublicKey("rpskpFCUxMTf7uRHBWydZvVGH3J5C37qmbzQHXbBE6j");
+const PROGRAM_ID = new PublicKey("rpsVN2ZC1K9hoGPs83xahjWo46cDNP49Tk7rQb56ipE");
 const MINT = new PublicKey('So11111111111111111111111111111111111111112');
 
   export function StoreProvider({
@@ -265,6 +266,16 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
     }
   }, [publicKey]);
 
+  const [playerInfo, _playerInfoBump] =  useMemo(() => {
+    return publicKey ? PublicKey.findProgramAddressSync(
+        [
+          Buffer.from(anchor.utils.bytes.utf8.encode("player_info")),
+          publicKey.toBuffer(),
+        ],
+        PROGRAM_ID
+    ) : [PublicKey.default, 0];
+  }, [publicKey, PROGRAM_ID])
+
   async function expireGame() {
     let signature = 'Transaction not completed';
     try {
@@ -272,12 +283,15 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
         const tx = await anchorProgram.methods.expireGame().accounts({
           game: parsedGameState.game,
           player: publicKey,
+          playerInfo,
         }).transaction();
-        
+
         const settleIx = await anchorProgram.methods.settleGame().accounts({
           game: parsedGameState.game,
           player1: parsedGameState.player1,
+          player1Info: playerInfo,
           player2: parsedGameState.player1,
+          player2Info: playerInfo,
           gameAuthority: parsedGameState.gameAuthority,
           systemProgram: anchor.web3.SystemProgram.programId,
         }).instruction();
@@ -381,14 +395,26 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
                 const tx = await anchorProgram.methods.revealGame(
                   option, new anchor.BN(parsedGameState.salt)
                 ).accounts({
-                  player: publicKey,
                   game: currentGameKey,
+                  player: publicKey,
+                  playerInfo,
                 }).transaction();
+
+                const p2Key: PublicKey = (gameInstance.state.acceptingReveal as any).player2.revealed.pubkey;
+                const [ player2Info, _player2InfoBump] = PublicKey.findProgramAddressSync(
+                  [
+                    Buffer.from(anchor.utils.bytes.utf8.encode("player_info")),
+                    p2Key.toBuffer(),
+                  ],
+                  PROGRAM_ID
+              );
 
                 const settleIx = await anchorProgram.methods.settleGame().accounts({
                   game: currentGameKey,
                   player1: (gameInstance.state.acceptingReveal as any).player1.committed.pubkey,
-                  player2: (gameInstance.state.acceptingReveal as any).player2.revealed.pubkey,
+                  player1Info: playerInfo,
+                  player2: p2Key,
+                  player2Info: player2Info,
                   gameAuthority: parsedGameState.gameAuthority,
                   systemProgram: anchor.web3.SystemProgram.programId,
                 }).instruction();
@@ -436,19 +462,39 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
           const gameSecret = new anchor.BN(queryParams.secret);
           const option = [{rock: {}}, {paper: {}}, {scissors: {}}][hand]
 
-          const tx = await anchorProgram.methods.joinGame(
+          const newTxn = new Transaction();
+
+          const [playerInfo, _playerInfoBump] = PublicKey.findProgramAddressSync(
+            [
+            Buffer.from(anchor.utils.bytes.utf8.encode("player_info")),
+            publicKey.toBuffer(),
+            ],
+            PROGRAM_ID
+        );
+
+          if (!(await connection.getAccountInfo(playerInfo))) {
+            newTxn.add(await anchorProgram.methods.createPlayerInfo().accounts({
+              owner: publicKey,
+              playerInfo: playerInfo,
+              systemProgram: anchor.web3.SystemProgram.programId,
+            }).instruction());
+          }
+
+          newTxn.add(await anchorProgram.methods.joinGame(
             option,
             gameSecret
           ).accounts({
             player: publicKey,
+            playerInfo,
             game: gameKey,
-            gameAuthority: gameAuthority,
-          }).transaction();
+            gameAuthority,
+            systemProgram: anchor.web3.SystemProgram.programId,
+          }).instruction());
 
           setTempStatus({
             status: 'signExpired',
           });
-          signature = await sendTransaction(tx, connection);
+          signature = await sendTransaction(newTxn, connection);
           const latestBlockHash = await connection.getLatestBlockhash();
           await connection.confirmTransaction({
             ...latestBlockHash,
@@ -660,7 +706,23 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
                 new anchor.BN(hand).toArrayLike(Buffer, "le", 1),
               ])), "hex");
 
-            const newTxn = new Transaction()
+            const newTxn = new Transaction();
+
+            const [playerInfo, _playerInfoBump] = PublicKey.findProgramAddressSync(
+                [
+                Buffer.from(anchor.utils.bytes.utf8.encode("player_info")),
+                publicKey.toBuffer(),
+                ],
+                PROGRAM_ID
+            );
+
+              if (!(await connection.getAccountInfo(playerInfo))) {
+                newTxn.add(await anchorProgram.methods.createPlayerInfo().accounts({
+                  owner: publicKey,
+                  playerInfo: playerInfo,
+                  systemProgram: anchor.web3.SystemProgram.programId,
+                }).instruction());
+              }
 
               const ix = await anchorProgram.methods.createGame(
                 new anchor.BN(seed),
@@ -673,6 +735,7 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
               ).accounts({
                 game,
                 player: publicKey,
+                playerInfo: playerInfo,
                 gameAuthority,
                 systemProgram: anchor.web3.SystemProgram.programId,
               }).instruction();
@@ -680,7 +743,7 @@ const MINT = new PublicKey('So11111111111111111111111111111111111111112');
               newTxn.add(ix)
 
               setTempStatus({status: 'signCreate'});
-              signature = await sendTransaction(newTxn, connection);
+              signature = await sendTransaction(newTxn, connection, {skipPreflight: true});
               const latestBlockHash = await connection.getLatestBlockhash();
               await connection.confirmTransaction({
                 ...latestBlockHash,
