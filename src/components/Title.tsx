@@ -12,10 +12,13 @@ function Title() {
             SOLRPS
           </Text>
           <Flex direction="column" align="center" paddingTop={12}>
-            <Text fontSize={24}>Play the native app on Solana Saga!</Text>
+            <Text fontSize={24}>Play on-chain RPS against bots and friends!</Text>
             <Box width={isLargerThan800 ? 200 : 100}>
-            <a href='https://play.google.com/store/apps/details?id=app.phantom&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'>
-                <img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png'/></a>
+                <div
+                style={{
+                  height: 77.4
+                }}
+                />
                 </Box>
             </Flex>
         </Box>
